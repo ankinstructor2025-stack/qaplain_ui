@@ -111,7 +111,7 @@ document.getElementById("loginButton").addEventListener("click", async (e) => {
     const idToken = await result.user.getIdToken();
 
     setBusy(true, "セッションを開始しています...");
-    await fetchJsonOrThrow(`${API_BASE_URL}/v1/session`, {
+    await fetchJsonOrThrow(`${API_BASE_URL}/session`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
