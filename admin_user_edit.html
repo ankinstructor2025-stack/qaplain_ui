@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>管理ユーザー編集 - QA+Plain Knowledge Studio</title>
+
+    <link rel="stylesheet" href="./css/theme.css">
+</head>
+
+<body>
+
+<main class="page">
+
+    <div class="page-toolbar">
+
+        <div class="page-toolbar-title">
+            管理ユーザー編集
+        </div>
+
+        <div class="page-toolbar-main">
+        </div>
+
+        <div class="page-toolbar-actions">
+            <button
+                id="saveButton"
+                class="btn btn-primary"
+                type="button">
+                保存
+            </button>
+
+            <button
+                id="backButton"
+                class="btn"
+                type="button">
+                戻る
+            </button>
+        </div>
+
+    </div>
+
+    <section class="card">
+
+        <div class="form-grid">
+
+            <div class="form-row">
+                <label>ユーザー名</label>
+                <input
+                    id="userName"
+                    class="input"
+                    type="text"
+                    maxlength="100">
+            </div>
+
+            <div class="form-row">
+                <label>メールアドレス</label>
+                <input
+                    id="email"
+                    class="input"
+                    type="email"
+                    maxlength="200">
+            </div>
+
+            <div class="form-row">
+                <label>利用開始日</label>
+                <input
+                    id="startDate"
+                    class="input"
+                    type="date">
+            </div>
+
+            <div class="form-row">
+                <label>利用終了日</label>
+                <input
+                    id="endDate"
+                    class="input"
+                    type="date">
+            </div>
+
+        </div>
+
+    </section>
+
+</main>
+
+<script type="module" src="./js/admin_user_edit.js"></script>
+
+</body>
+</html>
