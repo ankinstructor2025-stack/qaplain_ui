@@ -1,197 +1,298 @@
-import { auth } from "./firebase-config.js";
-import { API_BASE_URL } from "./config.js";
-import { authenticatedFetch, waitForLogin } from "./common.js";
+import {
+  auth
+} from "./firebase-config.js";
 
 import {
-    signOut
-} from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
+  API_BASE_URL
+} from "./config.js";
 
-const adminUserList = document.getElementById("adminUserList");
-const addUserButton = document.getElementById("addUserButton");
-const logoutButton = document.getElementById("logoutButton");
+import {
+  waitForLogin,
+  authenticatedJsonOrThrow
+} from "./common.js";
 
-document.addEventListener("DOMContentLoaded", initialize);
+import {
+  signOut
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+const adminUserList =
+  document.getElementById("adminUserList");
+
+const addUserButton =
+  document.getElementById("addUserButton");
+
+const logoutButton =
+  document.getElementById("logoutButton");
+
+document.addEventListener(
+  "DOMContentLoaded",
+  initialize
+);
 
 async function initialize() {
+  try {
+    await waitForLogin();
 
-    try {
-
-        await waitForLogin();
-
-        const isAdmin = await checkSystemAdministrator();
-
-        if (!isAdmin) {
-            alert("SYSTEM_ADMINISTRATOR権限がありません。");
-            location.href = "./menu.html";
-            return;
+    const session =
+      await authenticatedJsonOrThrow(
+        `${API_BASE_URL}/session`,
+        {
+          method: "POST"
         }
+      );
 
-        addUserButton.addEventListener("click", handleAddUser);
-        logoutButton.addEventListener("click", handleLogout);
+    if (!session.is_system_administrator) {
+      alert(
+        "SYSTEM_ADMINISTRATOR権限がありません。"
+      );
 
-        await loadAdminUsers();
-
-    } catch (e) {
-
-        console.error("初期表示エラー", e);
-
-        alert("初期化に失敗しました。");
-
-        location.href = "./index.html";
+      window.location.href = "./menu.html";
+      return;
     }
 
-}
-
-async function checkSystemAdministrator() {
-
-    const response = await authenticatedFetch(
-        `${API_BASE_URL}/system-admin`,
-        {
-            method: "GET"
-        }
+    addUserButton.addEventListener(
+      "click",
+      handleAddUser
     );
 
-    if (!response.ok) {
-        throw new Error(
-            `SYSTEM_ADMINISTRATOR確認失敗:${response.status}`
-        );
-    }
-
-    const result = await response.json();
-
-    return result.is_system_administrator === true;
-
-}
-
-async function loadAdminUsers() {
-
-    showLoading();
-
-    const response = await authenticatedFetch(
-        `${API_BASE_URL}/admin-users`,
-        {
-            method: "GET"
-        }
+    logoutButton.addEventListener(
+      "click",
+      handleLogout
     );
-
-    if (!response.ok) {
-        throw new Error(
-            `管理ユーザー取得失敗:${response.status}`
-        );
-    }
-
-    const result = await response.json();
-
-    const users = Array.isArray(result)
-        ? result
-        : result.users ?? [];
-
-    renderUsers(users);
-
-}
-
-function renderUsers(users) {
-
-    adminUserList.innerHTML = "";
-
-    if (users.length === 0) {
-
-        adminUserList.innerHTML =
-            `<div class="list-row">管理ユーザーが登録されていません。</div>`;
-
-        return;
-    }
-
-    users.forEach(user => {
-
-        const row = document.createElement("div");
-        row.className = "list-row";
-
-        row.innerHTML = `
-            <div style="width:22%;">${user.user_name ?? ""}</div>
-            <div style="width:32%;">${user.email ?? ""}</div>
-            <div style="width:16%;">${formatDate(user.start_date)}</div>
-            <div style="width:16%;">${formatDate(user.end_date)}</div>
-            <div style="width:14%;" class="list-row-actions">
-                <button class="btn edit-btn">編集</button>
-                <button class="btn delete-btn">削除</button>
-            </div>
-        `;
-
-        row.querySelector(".edit-btn")
-            .addEventListener("click", () => editUser(user));
-
-        row.querySelector(".delete-btn")
-            .addEventListener("click", () => deleteUser(user));
-
-        adminUserList.appendChild(row);
-
-    });
-
-}
-
-function formatDate(value) {
-
-    if (!value) {
-        return "";
-    }
-
-    return String(value).substring(0, 10);
-
-}
-
-function showLoading() {
-
-    adminUserList.innerHTML =
-        `<div class="list-row">読み込み中...</div>`;
-
-}
-
-function handleAddUser() {
-
-    location.href = "./admin_user_edit.html";
-
-}
-
-function editUser(user) {
-
-    const id = user.id ?? user.document_id;
-
-    location.href =
-        `./admin_user_edit.html?id=${encodeURIComponent(id)}`;
-
-}
-
-async function deleteUser(user) {
-
-    const id = user.id ?? user.document_id;
-
-    if (!confirm("削除しますか？")) {
-        return;
-    }
-
-    const response = await authenticatedFetch(
-        `${API_BASE_URL}/admin-users/${encodeURIComponent(id)}`,
-        {
-            method: "DELETE"
-        }
-    );
-
-    if (!response.ok) {
-
-        alert("削除に失敗しました。");
-        return;
-
-    }
 
     await loadAdminUsers();
 
+  } catch (error) {
+    console.error("初期表示エラー:", error);
+
+    alert(
+      error.message ||
+      "画面の初期化に失敗しました。"
+    );
+
+    window.location.href = "./index.html";
+  }
+}
+
+async function loadAdminUsers() {
+  showLoading();
+
+  try {
+    const result =
+      await authenticatedJsonOrThrow(
+        `${API_BASE_URL}/admin-users`,
+        {
+          method: "GET"
+        }
+      );
+
+    const users = Array.isArray(result)
+      ? result
+      : result.users || [];
+
+    renderUsers(users);
+
+  } catch (error) {
+    console.error(
+      "管理ユーザー一覧取得エラー:",
+      error
+    );
+
+    showListMessage(
+      error.message ||
+      "管理ユーザー一覧を取得できませんでした。"
+    );
+  }
+}
+
+function renderUsers(users) {
+  adminUserList.innerHTML = "";
+
+  if (users.length === 0) {
+    showListMessage(
+      "管理ユーザーが登録されていません。"
+    );
+    return;
+  }
+
+  users.forEach((user) => {
+    const row = document.createElement("div");
+    row.className = "list-row";
+
+    row.appendChild(
+      createColumn(user.user_name || "", "22%")
+    );
+
+    row.appendChild(
+      createColumn(user.email || "", "32%")
+    );
+
+    row.appendChild(
+      createColumn(
+        formatDate(user.start_date),
+        "16%"
+      )
+    );
+
+    row.appendChild(
+      createColumn(
+        formatDate(user.end_date),
+        "16%"
+      )
+    );
+
+    row.appendChild(
+      createActionColumn(user)
+    );
+
+    adminUserList.appendChild(row);
+  });
+}
+
+function createColumn(value, width) {
+  const column = document.createElement("div");
+
+  column.style.width = width;
+  column.textContent = value;
+
+  return column;
+}
+
+function createActionColumn(user) {
+  const column = document.createElement("div");
+
+  column.style.width = "14%";
+  column.className = "list-row-actions";
+
+  const editButton =
+    document.createElement("button");
+
+  editButton.type = "button";
+  editButton.className = "btn";
+  editButton.textContent = "編集";
+
+  editButton.addEventListener("click", () => {
+    handleEditUser(user);
+  });
+
+  const deleteButton =
+    document.createElement("button");
+
+  deleteButton.type = "button";
+  deleteButton.className = "btn";
+  deleteButton.textContent = "削除";
+
+  deleteButton.addEventListener("click", () => {
+    handleDeleteUser(user);
+  });
+
+  column.appendChild(editButton);
+  column.appendChild(deleteButton);
+
+  return column;
+}
+
+function formatDate(value) {
+  if (!value) {
+    return "";
+  }
+
+  return String(value).substring(0, 10);
+}
+
+function showLoading() {
+  showListMessage("読み込み中...");
+}
+
+function showListMessage(message) {
+  adminUserList.innerHTML = "";
+
+  const row = document.createElement("div");
+  row.className = "list-row";
+  row.textContent = message;
+
+  adminUserList.appendChild(row);
+}
+
+function handleAddUser() {
+  window.location.href =
+    "./admin_user_edit.html";
+}
+
+function handleEditUser(user) {
+  const userId =
+    user.id || user.document_id;
+
+  if (!userId) {
+    alert("ユーザーIDを取得できません。");
+    return;
+  }
+
+  window.location.href =
+    `./admin_user_edit.html?id=${
+      encodeURIComponent(userId)
+    }`;
+}
+
+async function handleDeleteUser(user) {
+  const userId =
+    user.id || user.document_id;
+
+  if (!userId) {
+    alert("ユーザーIDを取得できません。");
+    return;
+  }
+
+  const displayName =
+    user.user_name ||
+    user.email ||
+    "この管理ユーザー";
+
+  const confirmed = window.confirm(
+    `${displayName}を削除しますか？`
+  );
+
+  if (!confirmed) {
+    return;
+  }
+
+  try {
+    await authenticatedJsonOrThrow(
+      `${API_BASE_URL}/admin-users/${
+        encodeURIComponent(userId)
+      }`,
+      {
+        method: "DELETE"
+      }
+    );
+
+    await loadAdminUsers();
+
+  } catch (error) {
+    console.error(
+      "管理ユーザー削除エラー:",
+      error
+    );
+
+    alert(
+      error.message ||
+      "管理ユーザーを削除できませんでした。"
+    );
+  }
 }
 
 async function handleLogout() {
-
+  try {
     await signOut(auth);
 
-    location.href = "./index.html";
+    window.location.href = "./index.html";
 
+  } catch (error) {
+    console.error(
+      "ログアウトエラー:",
+      error
+    );
+
+    alert("ログアウトに失敗しました。");
+  }
 }
