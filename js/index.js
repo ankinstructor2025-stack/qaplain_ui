@@ -50,16 +50,16 @@ document.getElementById("loginButton").addEventListener("click", async (e) => {
     }
 
     // ユーザー初期化
-    setBusy(true, "ユーザー環境を初期化しています...");
-    await fetchJsonOrThrow(
-        `${API_BASE_URL}/v1/user/init`,
-        {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${idToken}`
-            }
-        }
-    );
+    //setBusy(true, "ユーザー環境を初期化しています...");
+    //await fetchJsonOrThrow(
+    //    `${API_BASE_URL}/v1/user/init`,
+    //    {
+    //        method: "POST",
+    //        headers: {
+    //            Authorization: `Bearer ${idToken}`
+    //        }
+    //    }
+    //);
 
     // メニューへ
     setBusy(true, "メニューへ移動しています...");
