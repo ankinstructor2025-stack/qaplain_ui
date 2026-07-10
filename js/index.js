@@ -43,6 +43,12 @@ document.getElementById("loginButton").addEventListener("click", async (e) => {
             : "一般ユーザーです"
     );
 
+    // 管理者判定
+    if (session.is_system_administrator) {
+        window.location.href = "./admin_user_maintenance.html";
+        return;
+    }
+
     // ユーザー初期化
     setBusy(true, "ユーザー環境を初期化しています...");
     await fetchJsonOrThrow(
