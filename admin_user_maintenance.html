@@ -3,33 +3,62 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>管理ユーザー管理 - QA+Plain Knowledge Studio</title>
 
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="./css/theme.css">
 </head>
 
 <body>
 
-    <div class="container">
+    <main class="page">
 
-        <div class="login-card">
+        <div class="page-toolbar">
 
-            <h1>QA+Plain Knowledge Studio</h1>
-            <h2>管理ユーザー管理</h2>
+            <div class="page-toolbar-title">
+                管理ユーザー管理
+            </div>
 
-            <hr>
+            <div class="page-toolbar-main">
+            </div>
 
-            <p>
-                この画面では、管理権限を持つユーザーを登録・変更・削除します。
-            </p>
+            <div class="page-toolbar-actions">
+                <button
+                    id="addUserButton"
+                    type="button"
+                    class="btn btn-primary"
+                >
+                    新規登録
+                </button>
 
-            <div id="adminUserList">
-                （準備中）
+                <button
+                    id="logoutButton"
+                    type="button"
+                    class="btn"
+                >
+                    ログアウト
+                </button>
             </div>
 
         </div>
 
-    </div>
+        <section class="card">
+
+            <div class="list-header">
+                <div style="width: 22%;">ユーザー名</div>
+                <div style="width: 32%;">メールアドレス</div>
+                <div style="width: 16%;">利用開始日</div>
+                <div style="width: 16%;">利用終了日</div>
+                <div style="width: 14%;">操作</div>
+            </div>
+
+            <div id="adminUserList">
+                <!-- admin_user_maintenance.js で一覧を表示 -->
+            </div>
+
+        </section>
+
+    </main>
 
     <script type="module" src="./admin_user_maintenance.js"></script>
 
