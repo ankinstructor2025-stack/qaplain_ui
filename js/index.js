@@ -36,13 +36,6 @@ document.getElementById("loginButton").addEventListener("click", async (e) => {
         }
     );
 
-    // 管理者判定（確認用）
-    alert(
-        session.is_system_administrator
-            ? "System Administratorです"
-            : "一般ユーザーです"
-    );
-
     // 管理者判定
     if (session.is_system_administrator) {
         window.location.href = "./admin_user_maintenance.html";
