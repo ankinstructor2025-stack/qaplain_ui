@@ -154,7 +154,7 @@ function renderUsers(users) {
         row.appendChild(
             createColumn(
                 user.email || "",
-                "28%"
+                "24%"
             )
         );
 
@@ -168,21 +168,21 @@ function renderUsers(users) {
         row.appendChild(
             createColumn(
                 user.user_type || "",
-                "12%"
+                "10%"
             )
         );
 
         row.appendChild(
             createColumn(
                 formatDate(user.start_date),
-                "13%"
+                "11%"
             )
         );
 
         row.appendChild(
             createColumn(
                 formatDate(user.end_date),
-                "13%"
+                "11%"
             )
         );
 
@@ -218,7 +218,7 @@ function createActionColumn(
     const column =
         document.createElement("div");
 
-    column.style.width = "14%";
+    column.style.width = "6%";
     column.className =
         "list-row-actions";
 
