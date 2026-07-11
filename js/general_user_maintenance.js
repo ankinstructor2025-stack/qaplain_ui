@@ -160,6 +160,13 @@ function renderUsers(users) {
 
         row.appendChild(
             createColumn(
+                user.parent_user || "",
+                "18%"
+            )
+        );
+
+        row.appendChild(
+            createColumn(
                 user.user_type || "",
                 "12%"
             )
