@@ -65,12 +65,9 @@ async function handleUserAdmin() {
                 }
             );
 
-        if (!session.is_system_administrator) {
-
+        if (!session.can_manage_users) {
             alert("管理権限がありません。");
-
             return;
-
         }
 
         location.href =
