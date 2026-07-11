@@ -7,19 +7,28 @@ import {
     authenticatedJsonOrThrow
 } from "./common.js";
 
+
 const tenantList =
-    document.getElementById("tenantList");
+    document.getElementById(
+        "tenantList"
+    );
 
 const addTenantButton =
-    document.getElementById("addTenantButton");
+    document.getElementById(
+        "addTenantButton"
+    );
 
 const backButton =
-    document.getElementById("backButton");
+    document.getElementById(
+        "backButton"
+    );
+
 
 document.addEventListener(
     "DOMContentLoaded",
     initialize
 );
+
 
 async function initialize() {
 
@@ -37,7 +46,9 @@ async function initialize() {
 
         if (!session.can_manage_users) {
 
-            alert("管理権限がありません。");
+            alert(
+                "管理権限がありません。"
+            );
 
             location.href =
                 "./menu.html";
@@ -61,7 +72,7 @@ async function initialize() {
     } catch (error) {
 
         console.error(
-            "初期表示エラー:",
+            "テナント管理画面初期化エラー:",
             error
         );
 
@@ -77,12 +88,24 @@ async function initialize() {
 
 }
 
+
 async function loadTenants() {
 
-    showLoading();
+    showListMessage(
+        "読み込み中..."
+    );
 
     try {
 
+        /*
+         * API側で以下を確認する。
+         *
+         * 1. ログインユーザーが管理権限を持つこと
+         * 2. ログインメールアドレスと
+         *    tenant.parent_user が一致すること
+         *
+         * この一覧APIではAPIキーを返さない。
+         */
         const result =
             await authenticatedJsonOrThrow(
                 `${API_BASE_URL}/tenants`,
@@ -96,7 +119,9 @@ async function loadTenants() {
                 ? result
                 : result.tenants || [];
 
-        renderTenants(tenants);
+        renderTenants(
+            tenants
+        );
 
     } catch (error) {
 
@@ -114,9 +139,13 @@ async function loadTenants() {
 
 }
 
-function renderTenants(tenants) {
 
-    tenantList.innerHTML = "";
+function renderTenants(
+    tenants
+) {
+
+    tenantList.innerHTML =
+        "";
 
     if (tenants.length === 0) {
 
@@ -128,51 +157,64 @@ function renderTenants(tenants) {
 
     }
 
-    tenants.forEach(tenant => {
+    tenants.forEach(
+        tenant => {
 
-        const row =
-            document.createElement("div");
+            const row =
+                document.createElement(
+                    "div"
+                );
 
-        row.className =
-            "list-row";
+            row.className =
+                "list-row";
 
-        row.appendChild(
-            createColumn(
-                tenant.tenant_name || "",
-                "28%"
-            )
-        );
+            row.appendChild(
+                createColumn(
+                    tenant.tenant_name || "",
+                    "28%"
+                )
+            );
 
-        row.appendChild(
-            createColumn(
-                tenant.parent_user || "",
-                "30%"
-            )
-        );
+            row.appendChild(
+                createColumn(
+                    tenant.parent_user || "",
+                    "30%"
+                )
+            );
 
-        row.appendChild(
-            createColumn(
-                formatDate(tenant.start_date),
-                "14%"
-            )
-        );
+            row.appendChild(
+                createColumn(
+                    formatDate(
+                        tenant.start_date
+                    ),
+                    "14%"
+                )
+            );
 
-        row.appendChild(
-            createColumn(
-                formatDate(tenant.end_date),
-                "14%"
-            )
-        );
+            row.appendChild(
+                createColumn(
+                    formatDate(
+                        tenant.end_date
+                    ),
+                    "14%"
+                )
+            );
 
-        row.appendChild(
-            createActionColumn(tenant)
-        );
+            row.appendChild(
+                createActionColumn(
+                    tenant
+                )
+            );
 
-        tenantList.appendChild(row);
+            tenantList.appendChild(
+                row
+            );
 
-    });
+        }
+    );
 
 }
+
 
 function createColumn(
     value,
@@ -180,7 +222,9 @@ function createColumn(
 ) {
 
     const column =
-        document.createElement("div");
+        document.createElement(
+            "div"
+        );
 
     column.style.width =
         width;
@@ -192,12 +236,15 @@ function createColumn(
 
 }
 
+
 function createActionColumn(
     tenant
 ) {
 
     const column =
-        document.createElement("div");
+        document.createElement(
+            "div"
+        );
 
     column.style.width =
         "14%";
@@ -205,8 +252,11 @@ function createActionColumn(
     column.className =
         "list-row-actions";
 
+
     const editButton =
-        document.createElement("button");
+        document.createElement(
+            "button"
+        );
 
     editButton.type =
         "button";
@@ -219,11 +269,18 @@ function createActionColumn(
 
     editButton.addEventListener(
         "click",
-        () => handleEditTenant(tenant)
+        () => {
+            handleEditTenant(
+                tenant
+            );
+        }
     );
 
+
     const deleteButton =
-        document.createElement("button");
+        document.createElement(
+            "button"
+        );
 
     deleteButton.type =
         "button";
@@ -236,8 +293,13 @@ function createActionColumn(
 
     deleteButton.addEventListener(
         "click",
-        () => handleDeleteTenant(tenant)
+        () => {
+            handleDeleteTenant(
+                tenant
+            );
+        }
     );
+
 
     column.appendChild(
         editButton
@@ -251,6 +313,7 @@ function createActionColumn(
 
 }
 
+
 function handleAddTenant() {
 
     location.href =
@@ -258,13 +321,13 @@ function handleAddTenant() {
 
 }
 
+
 function handleEditTenant(
     tenant
 ) {
 
     const tenantId =
-        tenant.id ||
-        tenant.document_id;
+        tenant.id;
 
     if (!tenantId) {
 
@@ -278,18 +341,20 @@ function handleEditTenant(
 
     location.href =
         `./tenant_edit.html?id=${
-            encodeURIComponent(tenantId)
+            encodeURIComponent(
+                tenantId
+            )
         }`;
 
 }
+
 
 async function handleDeleteTenant(
     tenant
 ) {
 
     const tenantId =
-        tenant.id ||
-        tenant.document_id;
+        tenant.id;
 
     if (!tenantId) {
 
@@ -301,13 +366,13 @@ async function handleDeleteTenant(
 
     }
 
-    const displayName =
+    const tenantName =
         tenant.tenant_name ||
         "このテナント";
 
     const confirmed =
         confirm(
-            `${displayName}を削除しますか？`
+            `${tenantName}を削除しますか？`
         );
 
     if (!confirmed) {
@@ -316,9 +381,19 @@ async function handleDeleteTenant(
 
     try {
 
+        setActionButtonsDisabled(
+            true
+        );
+
+        /*
+         * 削除時もAPI側で、
+         * 管理権限とparent_userの一致を確認する。
+         */
         await authenticatedJsonOrThrow(
             `${API_BASE_URL}/tenants/${
-                encodeURIComponent(tenantId)
+                encodeURIComponent(
+                    tenantId
+                )
             }`,
             {
                 method: "DELETE"
@@ -339,26 +414,55 @@ async function handleDeleteTenant(
             "テナントを削除できませんでした。"
         );
 
+    } finally {
+
+        setActionButtonsDisabled(
+            false
+        );
+
     }
 
 }
 
-function showLoading() {
 
-    showListMessage(
-        "読み込み中..."
+function setActionButtonsDisabled(
+    disabled
+) {
+
+    addTenantButton.disabled =
+        disabled;
+
+    backButton.disabled =
+        disabled;
+
+    const actionButtons =
+        tenantList.querySelectorAll(
+            "button"
+        );
+
+    actionButtons.forEach(
+        button => {
+
+            button.disabled =
+                disabled;
+
+        }
     );
 
 }
+
 
 function showListMessage(
     message
 ) {
 
-    tenantList.innerHTML = "";
+    tenantList.innerHTML =
+        "";
 
     const row =
-        document.createElement("div");
+        document.createElement(
+            "div"
+        );
 
     row.className =
         "list-row";
@@ -366,9 +470,12 @@ function showListMessage(
     row.textContent =
         message;
 
-    tenantList.appendChild(row);
+    tenantList.appendChild(
+        row
+    );
 
 }
+
 
 function formatDate(
     value
@@ -378,10 +485,15 @@ function formatDate(
         return "";
     }
 
-    return String(value)
-        .substring(0, 10);
+    return String(
+        value
+    ).substring(
+        0,
+        10
+    );
 
 }
+
 
 function handleBack() {
 

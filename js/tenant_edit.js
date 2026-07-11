@@ -11,33 +11,71 @@ import {
     authenticatedJsonOrThrow
 } from "./common.js";
 
+
 const saveButton =
-    document.getElementById("saveButton");
+    document.getElementById(
+        "saveButton"
+    );
 
 const backButton =
-    document.getElementById("backButton");
+    document.getElementById(
+        "backButton"
+    );
 
 const tenantNameInput =
-    document.getElementById("tenantName");
+    document.getElementById(
+        "tenantName"
+    );
 
 const parentUserInput =
-    document.getElementById("parentUser");
+    document.getElementById(
+        "parentUser"
+    );
 
 const startDateInput =
-    document.getElementById("startDate");
+    document.getElementById(
+        "startDate"
+    );
 
 const endDateInput =
-    document.getElementById("endDate");
+    document.getElementById(
+        "endDate"
+    );
+
+const openaiApiKeyInput =
+    document.getElementById(
+        "openaiApiKey"
+    );
+
+const geminiApiKeyInput =
+    document.getElementById(
+        "geminiApiKey"
+    );
+
+const toggleOpenaiApiKeyButton =
+    document.getElementById(
+        "toggleOpenaiApiKeyButton"
+    );
+
+const toggleGeminiApiKeyButton =
+    document.getElementById(
+        "toggleGeminiApiKeyButton"
+    );
+
 
 const tenantId =
     new URLSearchParams(
         location.search
-    ).get("id");
+    ).get(
+        "id"
+    );
+
 
 document.addEventListener(
     "DOMContentLoaded",
     initialize
 );
+
 
 async function initialize() {
 
@@ -55,7 +93,9 @@ async function initialize() {
 
         if (!session.can_manage_users) {
 
-            alert("管理権限がありません。");
+            alert(
+                "管理権限がありません。"
+            );
 
             location.href =
                 "./menu.html";
@@ -74,21 +114,40 @@ async function initialize() {
             handleBack
         );
 
+        toggleOpenaiApiKeyButton.addEventListener(
+            "click",
+            () => {
+                toggleApiKeyVisibility(
+                    openaiApiKeyInput,
+                    toggleOpenaiApiKeyButton
+                );
+            }
+        );
+
+        toggleGeminiApiKeyButton.addEventListener(
+            "click",
+            () => {
+                toggleApiKeyVisibility(
+                    geminiApiKeyInput,
+                    toggleGeminiApiKeyButton
+                );
+            }
+        );
+
         if (tenantId) {
 
             await loadTenant();
 
         } else {
 
-            parentUserInput.value =
-                auth.currentUser?.email || "";
+            initializeNewTenant();
 
         }
 
     } catch (error) {
 
         console.error(
-            "初期表示エラー:",
+            "テナント編集画面初期化エラー:",
             error
         );
 
@@ -104,6 +163,23 @@ async function initialize() {
 
 }
 
+
+function initializeNewTenant() {
+
+    parentUserInput.value =
+        auth.currentUser?.email || "";
+
+    startDateInput.value =
+        getTodayText();
+
+    startDateInput.readOnly =
+        false;
+
+    resetApiKeyVisibility();
+
+}
+
+
 async function loadTenant() {
 
     setButtonState(
@@ -113,13 +189,24 @@ async function loadTenant() {
 
     try {
 
+        /*
+         * API側で以下を確認した場合だけ、
+         * 復号されたAPIキーの実値が返る。
+         *
+         * 1. ログインユーザーが管理権限を持つ
+         * 2. ログインメールアドレスと
+         *    tenant.parent_user が一致する
+         */
         const tenant =
             await authenticatedJsonOrThrow(
                 `${API_BASE_URL}/tenants/${
-                    encodeURIComponent(tenantId)
+                    encodeURIComponent(
+                        tenantId
+                    )
                 }`,
                 {
-                    method: "GET"
+                    method: "GET",
+                    cache: "no-store"
                 }
             );
 
@@ -130,22 +217,44 @@ async function loadTenant() {
             tenant.parent_user || "";
 
         startDateInput.value =
-            formatDate(tenant.start_date);
+            formatDate(
+                tenant.start_date
+            );
 
         endDateInput.value =
-            formatDate(tenant.end_date);
+            formatDate(
+                tenant.end_date
+            );
+
+        openaiApiKeyInput.value =
+            tenant.openai_api_key || "";
+
+        geminiApiKeyInput.value =
+            tenant.gemini_api_key || "";
+
+        /*
+         * 既存テナントは利用開始日を変更不可。
+         */
+        startDateInput.readOnly =
+            true;
+
+        resetApiKeyVisibility();
 
     } finally {
 
-        setButtonState(false);
+        setButtonState(
+            false
+        );
 
     }
 
 }
 
+
 async function handleSave() {
 
     const body = {
+
         tenant_name:
             tenantNameInput.value.trim(),
 
@@ -153,15 +262,26 @@ async function handleSave() {
             startDateInput.value,
 
         end_date:
-            endDateInput.value || null
+            endDateInput.value || null,
+
+        openai_api_key:
+            openaiApiKeyInput.value.trim() || null,
+
+        gemini_api_key:
+            geminiApiKeyInput.value.trim() || null
+
     };
 
     const validationMessage =
-        validateInput(body);
+        validateInput(
+            body
+        );
 
     if (validationMessage) {
 
-        alert(validationMessage);
+        alert(
+            validationMessage
+        );
 
         return;
 
@@ -170,7 +290,9 @@ async function handleSave() {
     const url =
         tenantId
             ? `${API_BASE_URL}/tenants/${
-                encodeURIComponent(tenantId)
+                encodeURIComponent(
+                    tenantId
+                )
             }`
             : `${API_BASE_URL}/tenants`;
 
@@ -195,7 +317,9 @@ async function handleSave() {
                         "application/json"
                 },
                 body:
-                    JSON.stringify(body)
+                    JSON.stringify(
+                        body
+                    )
             }
         );
 
@@ -220,34 +344,88 @@ async function handleSave() {
 
     } finally {
 
-        setButtonState(false);
+        setButtonState(
+            false
+        );
 
     }
 
 }
+
 
 function validateInput(
     body
 ) {
 
     if (!body.tenant_name) {
-        return "テナント名を入力してください。";
+
+        return (
+            "テナント名を入力してください。"
+        );
+
     }
 
     if (!body.start_date) {
-        return "利用開始日を入力してください。";
+
+        return (
+            "利用開始日を入力してください。"
+        );
+
     }
 
     if (
         body.end_date &&
         body.start_date > body.end_date
     ) {
-        return "利用終了日は利用開始日以降の日付を入力してください。";
+
+        return (
+            "利用終了日は利用開始日以降の日付を入力してください。"
+        );
+
     }
 
     return "";
 
 }
+
+
+function toggleApiKeyVisibility(
+    input,
+    button
+) {
+
+    const isPassword =
+        input.type === "password";
+
+    input.type =
+        isPassword
+            ? "text"
+            : "password";
+
+    button.textContent =
+        isPassword
+            ? "非表示"
+            : "表示";
+
+}
+
+
+function resetApiKeyVisibility() {
+
+    openaiApiKeyInput.type =
+        "password";
+
+    geminiApiKeyInput.type =
+        "password";
+
+    toggleOpenaiApiKeyButton.textContent =
+        "表示";
+
+    toggleGeminiApiKeyButton.textContent =
+        "表示";
+
+}
+
 
 function setButtonState(
     disabled,
@@ -260,12 +438,34 @@ function setButtonState(
     backButton.disabled =
         disabled;
 
+    toggleOpenaiApiKeyButton.disabled =
+        disabled;
+
+    toggleGeminiApiKeyButton.disabled =
+        disabled;
+
+    tenantNameInput.disabled =
+        disabled;
+
+    startDateInput.disabled =
+        disabled;
+
+    endDateInput.disabled =
+        disabled;
+
+    openaiApiKeyInput.disabled =
+        disabled;
+
+    geminiApiKeyInput.disabled =
+        disabled;
+
     saveButton.textContent =
         disabled
             ? text
             : "保存";
 
 }
+
 
 function formatDate(
     value
@@ -275,14 +475,61 @@ function formatDate(
         return "";
     }
 
-    return String(value)
-        .substring(0, 10);
+    return String(
+        value
+    ).substring(
+        0,
+        10
+    );
 
 }
 
+
+function getTodayText() {
+
+    const today =
+        new Date();
+
+    const year =
+        today.getFullYear();
+
+    const month =
+        String(
+            today.getMonth() + 1
+        ).padStart(
+            2,
+            "0"
+        );
+
+    const day =
+        String(
+            today.getDate()
+        ).padStart(
+            2,
+            "0"
+        );
+
+    return `${year}-${month}-${day}`;
+
+}
+
+
 function handleBack() {
+
+    clearApiKeys();
 
     location.href =
         "./tenant_maintenance.html";
+
+}
+
+
+function clearApiKeys() {
+
+    openaiApiKeyInput.value =
+        "";
+
+    geminiApiKeyInput.value =
+        "";
 
 }
