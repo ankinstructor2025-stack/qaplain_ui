@@ -16,6 +16,9 @@ const backButton =
 const userNameInput =
     document.getElementById("userName");
 
+const parentUserInput =
+    document.getElementById("parentUser");
+
 const emailInput =
     document.getElementById("email");
 
@@ -83,6 +86,9 @@ async function loadGeneralUser() {
 
     emailInput.value =
         user.email || "";
+
+    parentUserInput.value =
+        user.parent_user || "";
 
     userTypeInput.value =
         user.user_type || "GENERAL";
