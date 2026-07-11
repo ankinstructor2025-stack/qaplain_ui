@@ -12,10 +12,11 @@ const emailInput = document.getElementById("email");
 const startDateInput = document.getElementById("startDate");
 const endDateInput = document.getElementById("endDate");
 
-const urlParameters = new URLSearchParams(location.search);
+const urlParameters = new URLSearchParams(window.location.search);
 const adminUserId = urlParameters.get("id");
 
 document.addEventListener("DOMContentLoaded", initialize);
+
 
 async function initialize() {
 
@@ -23,15 +24,12 @@ async function initialize() {
 
         await waitForLogin();
 
-        const isSystemAdministrator =
-            await checkSystemAdministrator();
+        const session = await getSession();
 
-        if (!isSystemAdministrator) {
-
+        if (!session.is_system_administrator) {
             alert("SYSTEM_ADMINISTRATOR権限がありません。");
-            location.href = "./menu.html";
+            window.location.href = "./menu.html";
             return;
-
         }
 
         saveButton.addEventListener("click", handleSave);
@@ -43,42 +41,42 @@ async function initialize() {
 
     } catch (error) {
 
-        console.error("初期表示エラー", error);
+        console.error("初期表示エラー:", error);
 
         alert("初期化に失敗しました。");
-
-        location.href = "./index.html";
 
     }
 
 }
 
-async function checkSystemAdministrator() {
+
+async function getSession() {
 
     const response = await authenticatedFetch(
-        `${API_BASE_URL}/system-admin`,
+        `${API_BASE_URL}/session`,
         {
-            method: "GET"
+            method: "POST"
         }
     );
 
     if (!response.ok) {
 
-        throw new Error(
-            `SYSTEM_ADMINISTRATOR確認失敗:${response.status}`
+        const message = await getErrorMessage(
+            response,
+            "セッション確認に失敗しました。"
         );
 
+        throw new Error(message);
     }
 
-    const result = await response.json();
-
-    return result.is_system_administrator === true;
+    return await response.json();
 
 }
 
+
 async function loadAdminUser() {
 
-    setSavingState(true, "読み込み中...");
+    setButtonState(true, "読込中...");
 
     try {
 
@@ -97,7 +95,6 @@ async function loadAdminUser() {
             );
 
             throw new Error(message);
-
         }
 
         const user = await response.json();
@@ -109,26 +106,23 @@ async function loadAdminUser() {
 
     } finally {
 
-        setSavingState(false);
-
+        setButtonState(false);
     }
 
 }
 
+
 async function handleSave() {
 
     const inputData = getInputData();
-
     const validationMessage = validateInput(inputData);
 
     if (validationMessage) {
-
         alert(validationMessage);
         return;
-
     }
 
-    setSavingState(true, "保存中...");
+    setButtonState(true, "保存中...");
 
     try {
 
@@ -138,12 +132,10 @@ async function handleSave() {
             ? `${API_BASE_URL}/admin-users/${encodeURIComponent(adminUserId)}`
             : `${API_BASE_URL}/admin-users`;
 
-        const method = isEditMode ? "PUT" : "POST";
-
         const response = await authenticatedFetch(
             url,
             {
-                method,
+                method: isEditMode ? "PUT" : "POST",
                 headers: {
                     "Content-Type": "application/json"
                 },
@@ -160,37 +152,37 @@ async function handleSave() {
 
             alert(message);
             return;
-
         }
 
         alert("保存しました。");
 
-        location.href = "./admin_user_maintenance.html";
+        window.location.href = "./admin_user_maintenance.html";
 
     } catch (error) {
 
-        console.error("保存エラー", error);
+        console.error("保存エラー:", error);
 
         alert("管理ユーザーの保存中にエラーが発生しました。");
 
     } finally {
 
-        setSavingState(false);
-
+        setButtonState(false);
     }
 
 }
+
 
 function getInputData() {
 
     return {
         user_name: userNameInput.value.trim(),
         email: emailInput.value.trim().toLowerCase(),
-        start_date: startDateInput.value || null,
+        start_date: startDateInput.value,
         end_date: endDateInput.value || null
     };
 
 }
+
 
 function validateInput(inputData) {
 
@@ -218,14 +210,15 @@ function validateInput(inputData) {
     }
 
     return "";
-
 }
+
 
 function handleBack() {
 
-    location.href = "./admin_user_maintenance.html";
+    window.location.href = "./admin_user_maintenance.html";
 
 }
+
 
 function formatDateValue(value) {
 
@@ -234,19 +227,16 @@ function formatDateValue(value) {
     }
 
     return String(value).substring(0, 10);
-
 }
 
-function setSavingState(isSaving, message = "保存中...") {
 
-    saveButton.disabled = isSaving;
-    backButton.disabled = isSaving;
+function setButtonState(disabled, text = "保存") {
 
-    saveButton.textContent = isSaving
-        ? message
-        : "保存";
-
+    saveButton.disabled = disabled;
+    backButton.disabled = disabled;
+    saveButton.textContent = disabled ? text : "保存";
 }
+
 
 async function getErrorMessage(response, defaultMessage) {
 
@@ -264,10 +254,8 @@ async function getErrorMessage(response, defaultMessage) {
 
     } catch (error) {
 
-        console.error("エラー応答解析失敗", error);
-
+        console.error("エラー応答解析失敗:", error);
     }
 
     return `${defaultMessage} HTTP ${response.status}`;
-
 }
