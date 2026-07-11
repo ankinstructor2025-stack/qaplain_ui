@@ -443,3 +443,32 @@ textarea{
     color:#dbeafe;
     font-size:14px;
 }
+
+.list-row{
+  display:flex;
+  align-items:center;
+  min-height:56px;
+  padding:0 10px;
+  border-bottom:1px solid rgba(255,255,255,.10);
+  color:#ffffff;
+}
+
+.list-row > div{
+  display:flex;
+  align-items:center;
+  min-height:56px;
+  padding-right:12px;
+  overflow-wrap:anywhere;
+}
+
+.list-row-actions{
+  justify-content:flex-start;
+  gap:8px;
+}
+
+.list-row-actions .btn{
+  min-width:64px;
+  height:36px;
+  padding:6px 12px;
+}
+
