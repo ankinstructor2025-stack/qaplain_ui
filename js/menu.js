@@ -12,6 +12,9 @@ import {
 const userAdminButton =
     document.getElementById("btn-user-admin");
 
+const tenantAdminButton =
+    document.getElementById("btn-tenant-admin");
+
 const logoutButton =
     document.getElementById("btn-logout");
 
@@ -29,6 +32,11 @@ async function initialize() {
         userAdminButton.addEventListener(
             "click",
             handleUserAdmin
+        );
+
+        tenantAdminButton.addEventListener(
+            "click",
+            handleTenantAdmin
         );
 
         logoutButton.addEventListener(
@@ -85,6 +93,48 @@ async function handleUserAdmin() {
     } finally {
 
         userAdminButton.disabled = false;
+
+    }
+
+}
+
+async function handleTenantAdmin() {
+
+    tenantAdminButton.disabled = true;
+
+    try {
+
+        const session =
+            await authenticatedJsonOrThrow(
+                `${API_BASE_URL}/session`,
+                {
+                    method: "POST"
+                }
+            );
+
+        if (!session.can_manage_users) {
+
+            alert("管理権限がありません。");
+
+            return;
+
+        }
+
+        location.href =
+            "./tenant_maintenance.html";
+
+    } catch (error) {
+
+        console.error(error);
+
+        alert(
+            error.message ||
+            "管理権限の確認に失敗しました。"
+        );
+
+    } finally {
+
+        tenantAdminButton.disabled = false;
 
     }
 
