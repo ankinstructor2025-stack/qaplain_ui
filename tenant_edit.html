@@ -1,7 +1,9 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
     <meta charset="UTF-8">
+
     <meta
         name="viewport"
         content="width=device-width, initial-scale=1.0">
@@ -54,7 +56,7 @@
 
             <div class="form-row">
 
-                <label>
+                <label for="tenantName">
                     テナント名
                 </label>
 
@@ -62,13 +64,14 @@
                     id="tenantName"
                     class="input"
                     type="text"
-                    maxlength="100">
+                    maxlength="100"
+                    autocomplete="off">
 
             </div>
 
             <div class="form-row">
 
-                <label>
+                <label for="parentUser">
                     管理者
                 </label>
 
@@ -84,7 +87,7 @@
 
                 <div class="date-item">
 
-                    <label>
+                    <label for="startDate">
                         利用開始日
                     </label>
 
@@ -97,7 +100,7 @@
 
                 <div class="date-item">
 
-                    <label>
+                    <label for="endDate">
                         利用終了日
                     </label>
 
@@ -105,6 +108,70 @@
                         id="endDate"
                         class="input"
                         type="date">
+
+                </div>
+
+            </div>
+
+            <div class="form-row">
+
+                <label for="openaiApiKey">
+                    OpenAI APIキー
+                </label>
+
+                <div
+                    style="
+                        display:flex;
+                        gap:8px;
+                        align-items:center;
+                    ">
+
+                    <input
+                        id="openaiApiKey"
+                        class="input"
+                        type="password"
+                        autocomplete="new-password"
+                        spellcheck="false"
+                        style="flex:1;">
+
+                    <button
+                        id="toggleOpenaiApiKeyButton"
+                        type="button"
+                        class="btn">
+                        表示
+                    </button>
+
+                </div>
+
+            </div>
+
+            <div class="form-row">
+
+                <label for="geminiApiKey">
+                    Gemini APIキー
+                </label>
+
+                <div
+                    style="
+                        display:flex;
+                        gap:8px;
+                        align-items:center;
+                    ">
+
+                    <input
+                        id="geminiApiKey"
+                        class="input"
+                        type="password"
+                        autocomplete="new-password"
+                        spellcheck="false"
+                        style="flex:1;">
+
+                    <button
+                        id="toggleGeminiApiKeyButton"
+                        type="button"
+                        class="btn">
+                        表示
+                    </button>
 
                 </div>
 
@@ -122,4 +189,5 @@
 </script>
 
 </body>
+
 </html>
