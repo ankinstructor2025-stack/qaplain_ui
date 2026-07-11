@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+    <title>
+        テナント編集 - QA+Plain Knowledge Studio
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="./css/theme.css">
+</head>
+
+<body>
+
+<main class="page">
+
+    <div class="page-toolbar">
+
+        <div class="page-toolbar-title">
+            テナント編集
+        </div>
+
+        <div class="page-toolbar-main">
+        </div>
+
+        <div class="page-toolbar-actions">
+
+            <button
+                id="saveButton"
+                type="button"
+                class="btn btn-primary">
+                保存
+            </button>
+
+            <button
+                id="backButton"
+                type="button"
+                class="btn">
+                戻る
+            </button>
+
+        </div>
+
+    </div>
+
+    <section class="card">
+
+        <div class="form-grid">
+
+            <div class="form-row">
+
+                <label>
+                    テナント名
+                </label>
+
+                <input
+                    id="tenantName"
+                    class="input"
+                    type="text"
+                    maxlength="100">
+
+            </div>
+
+            <div class="form-row">
+
+                <label>
+                    管理者
+                </label>
+
+                <input
+                    id="parentUser"
+                    class="input"
+                    type="text"
+                    readonly>
+
+            </div>
+
+            <div class="date-row">
+
+                <div class="date-item">
+
+                    <label>
+                        利用開始日
+                    </label>
+
+                    <input
+                        id="startDate"
+                        class="input"
+                        type="date">
+
+                </div>
+
+                <div class="date-item">
+
+                    <label>
+                        利用終了日
+                    </label>
+
+                    <input
+                        id="endDate"
+                        class="input"
+                        type="date">
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+</main>
+
+<script
+    type="module"
+    src="./js/tenant_edit.js">
+</script>
+
+</body>
+</html>

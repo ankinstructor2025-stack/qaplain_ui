@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+    <title>
+        テナント管理 - QA+Plain Knowledge Studio
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="./css/theme.css">
+</head>
+
+<body>
+
+<main class="page">
+
+    <div class="page-toolbar">
+
+        <div class="page-toolbar-title">
+            テナント管理
+        </div>
+
+        <div class="page-toolbar-main">
+        </div>
+
+        <div class="page-toolbar-actions">
+
+            <button
+                id="addTenantButton"
+                type="button"
+                class="btn btn-primary">
+                新規登録
+            </button>
+
+            <button
+                id="backButton"
+                type="button"
+                class="btn">
+                戻る
+            </button>
+
+        </div>
+
+    </div>
+
+    <section class="card">
+
+        <div class="list-header">
+
+            <div style="width:28%;">
+                テナント名
+            </div>
+
+            <div style="width:30%;">
+                管理者
+            </div>
+
+            <div style="width:14%;">
+                利用開始日
+            </div>
+
+            <div style="width:14%;">
+                利用終了日
+            </div>
+
+            <div style="width:14%;">
+                操作
+            </div>
+
+        </div>
+
+        <div id="tenantList">
+            <!-- tenant_maintenance.js が一覧を表示 -->
+        </div>
+
+    </section>
+
+</main>
+
+<script
+    type="module"
+    src="./js/tenant_maintenance.js">
+</script>
+
+</body>
+</html>
