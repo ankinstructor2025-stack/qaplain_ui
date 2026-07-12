@@ -8,69 +8,20 @@ import {
 } from "./common.js";
 
 
-const newButton =
+const fileTypeList =
     document.getElementById(
-        "newButton"
+        "fileTypeList"
     );
 
-const saveButton =
+const addFileTypeButton =
     document.getElementById(
-        "saveButton"
-    );
-
-const deleteButton =
-    document.getElementById(
-        "deleteButton"
+        "addFileTypeButton"
     );
 
 const backButton =
     document.getElementById(
         "backButton"
     );
-
-const extensionInput =
-    document.getElementById(
-        "extension"
-    );
-
-const displayNameInput =
-    document.getElementById(
-        "displayName"
-    );
-
-const mimeTypesInput =
-    document.getElementById(
-        "mimeTypes"
-    );
-
-const parserTypeInput =
-    document.getElementById(
-        "parserType"
-    );
-
-const maxFileSizeMbInput =
-    document.getElementById(
-        "maxFileSizeMb"
-    );
-
-const enabledInput =
-    document.getElementById(
-        "enabled"
-    );
-
-const sortOrderInput =
-    document.getElementById(
-        "sortOrder"
-    );
-
-const fileTypeList =
-    document.getElementById(
-        "fileTypeList"
-    );
-
-
-let selectedExtension =
-    null;
 
 
 document.addEventListener(
@@ -108,27 +59,15 @@ async function initialize() {
 
         }
 
-        newButton.addEventListener(
+        addFileTypeButton.addEventListener(
             "click",
-            initializeNew
-        );
-
-        saveButton.addEventListener(
-            "click",
-            handleSave
-        );
-
-        deleteButton.addEventListener(
-            "click",
-            handleDelete
+            handleAddFileType
         );
 
         backButton.addEventListener(
             "click",
             handleBack
         );
-
-        initializeNew();
 
         await loadFileTypes();
 
@@ -224,7 +163,9 @@ function renderFileTypes(
 
             row.appendChild(
                 createColumn(
-                    `.${fileType.extension || ""}`,
+                    formatExtension(
+                        fileType.extension
+                    ),
                     "10%"
                 )
             );
@@ -241,7 +182,7 @@ function renderFileTypes(
                     formatMimeTypes(
                         fileType.mime_types
                     ),
-                    "30%"
+                    "28%"
                 )
             );
 
@@ -254,8 +195,8 @@ function renderFileTypes(
 
             row.appendChild(
                 createColumn(
-                    String(
-                        fileType.max_file_size_mb ?? ""
+                    formatNumber(
+                        fileType.max_file_size_mb
                     ),
                     "10%"
                 )
@@ -317,10 +258,11 @@ function createActionColumn(
         );
 
     column.style.width =
-        "10%";
+        "12%";
 
     column.className =
         "list-row-actions";
+
 
     const editButton =
         document.createElement(
@@ -339,14 +281,43 @@ function createActionColumn(
     editButton.addEventListener(
         "click",
         () => {
-            selectFileType(
+            handleEditFileType(
                 fileType
             );
         }
     );
 
+
+    const deleteButton =
+        document.createElement(
+            "button"
+        );
+
+    deleteButton.type =
+        "button";
+
+    deleteButton.className =
+        "btn";
+
+    deleteButton.textContent =
+        "削除";
+
+    deleteButton.addEventListener(
+        "click",
+        () => {
+            handleDeleteFileType(
+                fileType
+            );
+        }
+    );
+
+
     column.appendChild(
         editButton
+    );
+
+    column.appendChild(
+        deleteButton
     );
 
     return column;
@@ -354,189 +325,56 @@ function createActionColumn(
 }
 
 
-function selectFileType(
+function handleAddFileType() {
+
+    location.href =
+        "./file_type_edit.html";
+
+}
+
+
+function handleEditFileType(
     fileType
 ) {
 
-    selectedExtension =
-        fileType.extension;
-
-    extensionInput.value =
-        fileType.extension || "";
-
-    displayNameInput.value =
-        fileType.display_name || "";
-
-    mimeTypesInput.value =
-        Array.isArray(
-            fileType.mime_types
-        )
-            ? fileType.mime_types.join("\n")
-            : "";
-
-    parserTypeInput.value =
-        fileType.parser_type || "";
-
-    maxFileSizeMbInput.value =
-        fileType.max_file_size_mb ?? 50;
-
-    enabledInput.value =
-        fileType.enabled
-            ? "true"
-            : "false";
-
-    sortOrderInput.value =
-        fileType.sort_order ?? 10;
-
-    /*
-     * FirestoreのドキュメントIDとして
-     * 拡張子を使用するため、
-     * 登録後の拡張子は変更不可。
-     */
-    extensionInput.readOnly =
-        true;
-
-    deleteButton.disabled =
-        false;
-
-}
-
-
-function initializeNew() {
-
-    selectedExtension =
-        null;
-
-    extensionInput.value =
-        "";
-
-    displayNameInput.value =
-        "";
-
-    mimeTypesInput.value =
-        "";
-
-    parserTypeInput.value =
-        "";
-
-    maxFileSizeMbInput.value =
-        "50";
-
-    enabledInput.value =
-        "true";
-
-    sortOrderInput.value =
-        "10";
-
-    extensionInput.readOnly =
-        false;
-
-    deleteButton.disabled =
-        true;
-
-    extensionInput.focus();
-
-}
-
-
-async function handleSave() {
-
-    const body =
-        createRequestBody();
-
-    const validationMessage =
-        validateInput(
-            body
+    const extension =
+        normalizeExtension(
+            fileType.extension
         );
 
-    if (validationMessage) {
+    if (!extension) {
 
         alert(
-            validationMessage
+            "拡張子を取得できません。"
         );
 
         return;
 
     }
 
-    const isUpdate =
-        Boolean(
-            selectedExtension
-        );
-
-    const url =
-        isUpdate
-            ? `${API_BASE_URL}/file-types/${
-                encodeURIComponent(
-                    selectedExtension
-                )
-            }`
-            : `${API_BASE_URL}/file-types`;
-
-    const method =
-        isUpdate
-            ? "PUT"
-            : "POST";
-
-    setButtonState(
-        true,
-        "保存中..."
-    );
-
-    try {
-
-        await authenticatedJsonOrThrow(
-            url,
-            {
-                method,
-                headers: {
-                    "Content-Type":
-                        "application/json"
-                },
-                body:
-                    JSON.stringify(
-                        body
-                    )
-            }
-        );
-
-        alert(
-            "保存しました。"
-        );
-
-        initializeNew();
-
-        await loadFileTypes();
-
-    } catch (error) {
-
-        console.error(
-            "拡張子保存エラー:",
-            error
-        );
-
-        alert(
-            error.message ||
-            "拡張子を保存できませんでした。"
-        );
-
-    } finally {
-
-        setButtonState(
-            false
-        );
-
-    }
+    location.href =
+        `./file_type_edit.html?extension=${
+            encodeURIComponent(
+                extension
+            )
+        }`;
 
 }
 
 
-async function handleDelete() {
+async function handleDeleteFileType(
+    fileType
+) {
 
-    if (!selectedExtension) {
+    const extension =
+        normalizeExtension(
+            fileType.extension
+        );
+
+    if (!extension) {
 
         alert(
-            "削除する拡張子を選択してください。"
+            "拡張子を取得できません。"
         );
 
         return;
@@ -545,16 +383,15 @@ async function handleDelete() {
 
     const confirmed =
         confirm(
-            `.${selectedExtension}を削除しますか？`
+            `.${extension}を削除しますか？`
         );
 
     if (!confirmed) {
         return;
     }
 
-    setButtonState(
-        true,
-        "削除中..."
+    setActionButtonsDisabled(
+        true
     );
 
     try {
@@ -562,19 +399,13 @@ async function handleDelete() {
         await authenticatedJsonOrThrow(
             `${API_BASE_URL}/file-types/${
                 encodeURIComponent(
-                    selectedExtension
+                    extension
                 )
             }`,
             {
                 method: "DELETE"
             }
         );
-
-        alert(
-            "削除しました。"
-        );
-
-        initializeNew();
 
         await loadFileTypes();
 
@@ -592,7 +423,7 @@ async function handleDelete() {
 
     } finally {
 
-        setButtonState(
+        setActionButtonsDisabled(
             false
         );
 
@@ -601,203 +432,29 @@ async function handleDelete() {
 }
 
 
-function createRequestBody() {
-
-    const mimeTypes =
-        mimeTypesInput.value
-            .split(/\r?\n|,/)
-            .map(
-                value => value.trim()
-            )
-            .filter(
-                value => value
-            );
-
-    return {
-        extension:
-            normalizeExtension(
-                extensionInput.value
-            ),
-
-        display_name:
-            displayNameInput.value.trim(),
-
-        mime_types:
-            mimeTypes,
-
-        parser_type:
-            parserTypeInput.value.trim(),
-
-        max_file_size_mb:
-            Number(
-                maxFileSizeMbInput.value
-            ),
-
-        enabled:
-            enabledInput.value === "true",
-
-        sort_order:
-            Number(
-                sortOrderInput.value
-            )
-    };
-
-}
-
-
-function validateInput(
-    body
+function setActionButtonsDisabled(
+    disabled
 ) {
 
-    if (!body.extension) {
-
-        return (
-            "拡張子を入力してください。"
-        );
-
-    }
-
-    if (
-        !/^[a-z0-9]+$/.test(
-            body.extension
-        )
-    ) {
-
-        return (
-            "拡張子は半角英数字で入力してください。"
-        );
-
-    }
-
-    if (!body.display_name) {
-
-        return (
-            "表示名を入力してください。"
-        );
-
-    }
-
-    if (
-        body.mime_types.length === 0
-    ) {
-
-        return (
-            "MIMEタイプを入力してください。"
-        );
-
-    }
-
-    if (!body.parser_type) {
-
-        return (
-            "解析方式を入力してください。"
-        );
-
-    }
-
-    if (
-        !Number.isInteger(
-            body.max_file_size_mb
-        ) ||
-        body.max_file_size_mb < 1
-    ) {
-
-        return (
-            "最大ファイルサイズは1以上の整数で入力してください。"
-        );
-
-    }
-
-    if (
-        !Number.isInteger(
-            body.sort_order
-        ) ||
-        body.sort_order < 0
-    ) {
-
-        return (
-            "表示順は0以上の整数で入力してください。"
-        );
-
-    }
-
-    return "";
-
-}
-
-
-function normalizeExtension(
-    value
-) {
-
-    return String(
-        value || ""
-    )
-        .trim()
-        .toLowerCase()
-        .replace(
-            /^\.+/,
-            ""
-        );
-
-}
-
-
-function formatMimeTypes(
-    mimeTypes
-) {
-
-    if (!Array.isArray(mimeTypes)) {
-        return "";
-    }
-
-    return mimeTypes.join(", ");
-
-}
-
-
-function setButtonState(
-    disabled,
-    saveText = "保存"
-) {
-
-    newButton.disabled =
-        disabled;
-
-    saveButton.disabled =
+    addFileTypeButton.disabled =
         disabled;
 
     backButton.disabled =
         disabled;
 
-    deleteButton.disabled =
-        disabled || !selectedExtension;
+    const buttons =
+        fileTypeList.querySelectorAll(
+            "button"
+        );
 
-    extensionInput.disabled =
-        disabled;
+    buttons.forEach(
+        button => {
 
-    displayNameInput.disabled =
-        disabled;
+            button.disabled =
+                disabled;
 
-    mimeTypesInput.disabled =
-        disabled;
-
-    parserTypeInput.disabled =
-        disabled;
-
-    maxFileSizeMbInput.disabled =
-        disabled;
-
-    enabledInput.disabled =
-        disabled;
-
-    sortOrderInput.disabled =
-        disabled;
-
-    saveButton.textContent =
-        disabled
-            ? saveText
-            : "保存";
+        }
+    );
 
 }
 
@@ -822,6 +479,74 @@ function showListMessage(
 
     fileTypeList.appendChild(
         row
+    );
+
+}
+
+
+function normalizeExtension(
+    value
+) {
+
+    return String(
+        value || ""
+    )
+        .trim()
+        .toLowerCase()
+        .replace(
+            /^\.+/,
+            ""
+        );
+
+}
+
+
+function formatExtension(
+    value
+) {
+
+    const extension =
+        normalizeExtension(
+            value
+        );
+
+    if (!extension) {
+        return "";
+    }
+
+    return `.${extension}`;
+
+}
+
+
+function formatMimeTypes(
+    mimeTypes
+) {
+
+    if (!Array.isArray(mimeTypes)) {
+        return "";
+    }
+
+    return mimeTypes.join(
+        ", "
+    );
+
+}
+
+
+function formatNumber(
+    value
+) {
+
+    if (
+        value === null ||
+        value === undefined
+    ) {
+        return "";
+    }
+
+    return String(
+        value
     );
 
 }
