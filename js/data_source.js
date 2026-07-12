@@ -163,6 +163,19 @@ async function initialize() {
             }
         );
 
+        if (!session.can_manage_users) {
+
+            alert(
+                "管理権限がありません。"
+            );
+
+            location.href =
+                "./menu.html";
+
+            return;
+
+        }
+
         sourceTypeSelect.addEventListener(
             "change",
             handleSourceTypeChanged
@@ -241,7 +254,7 @@ async function loadAuthenticationMethods() {
 
     const result =
         await authenticatedJsonOrThrow(
-            `${API_BASE_URL}/authentication-methods`,
+            `${API_BASE_URL}/authentication-methods/available`,
             {
                 method: "GET"
             }
