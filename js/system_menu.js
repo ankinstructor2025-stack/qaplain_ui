@@ -18,6 +18,11 @@ const fileTypeButton =
         "fileTypeButton"
     );
 
+const authenticationMethodButton =
+    document.getElementById(
+        "authenticationMethodButton"
+    );
+
 const backButton =
     document.getElementById(
         "backButton"
@@ -61,38 +66,28 @@ async function initialize() {
 
         adminUserButton.addEventListener(
             "click",
-            () => {
-
-                location.href =
-                    "./admin_user_maintenance.html";
-
-            }
+            handleAdminUser
         );
 
         fileTypeButton.addEventListener(
             "click",
-            () => {
+            handleFileType
+        );
 
-                location.href =
-                    "./file_type_maintenance.html";
-
-            }
+        authenticationMethodButton.addEventListener(
+            "click",
+            handleAuthenticationMethod
         );
 
         backButton.addEventListener(
             "click",
-            () => {
-
-                location.href =
-                    "./menu.html";
-
-            }
+            handleBack
         );
 
     } catch (error) {
 
         console.error(
-            "system menu error",
+            "システム管理メニュー初期化エラー:",
             error
         );
 
@@ -105,5 +100,37 @@ async function initialize() {
             "./index.html";
 
     }
+
+}
+
+
+function handleAdminUser() {
+
+    location.href =
+        "./admin_user_maintenance.html";
+
+}
+
+
+function handleFileType() {
+
+    location.href =
+        "./file_type_maintenance.html";
+
+}
+
+
+function handleAuthenticationMethod() {
+
+    location.href =
+        "./authentication_method_maintenance.html";
+
+}
+
+
+function handleBack() {
+
+    location.href =
+        "./menu.html";
 
 }
