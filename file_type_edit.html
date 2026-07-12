@@ -54,132 +54,58 @@
 
         <div class="form-grid">
 
-            <div class="date-row">
+            <div class="form-row">
 
-                <div class="date-item">
+                <label for="extension">
+                    拡張子
+                </label>
 
-                    <label for="extension">
-                        拡張子
-                    </label>
+                <input
+                    id="extension"
+                    class="input"
+                    type="text"
+                    list="extensionOptions"
+                    maxlength="20"
+                    placeholder="候補から選択、または直接入力"
+                    autocomplete="off"
+                    spellcheck="false">
 
-                    <input
-                        id="extension"
-                        class="input"
-                        type="text"
-                        maxlength="20"
-                        placeholder="pdf"
-                        autocomplete="off"
-                        spellcheck="false">
+                <datalist id="extensionOptions">
 
-                </div>
+                    <option value="pdf">
+                    <option value="csv">
+                    <option value="txt">
+                    <option value="md">
+                    <option value="json">
+                    <option value="xml">
+                    <option value="docx">
+                    <option value="xlsx">
+                    <option value="pptx">
+                    <option value="eml">
 
-                <div class="date-item">
-
-                    <label for="displayName">
-                        表示名
-                    </label>
-
-                    <input
-                        id="displayName"
-                        class="input"
-                        type="text"
-                        maxlength="100"
-                        placeholder="PDF"
-                        autocomplete="off">
-
-                </div>
+                </datalist>
 
             </div>
 
             <div class="form-row">
 
-                <label for="mimeTypes">
-                    MIMEタイプ
+                <label for="enabled">
+                    状態
                 </label>
 
-                <textarea
-                    id="mimeTypes"
-                    class="input"
-                    rows="4"
-                    placeholder="application/pdf"></textarea>
+                <select
+                    id="enabled"
+                    class="input">
 
-            </div>
+                    <option value="true">
+                        有効
+                    </option>
 
-            <div class="date-row">
+                    <option value="false">
+                        無効
+                    </option>
 
-                <div class="date-item">
-
-                    <label for="parserType">
-                        解析方式
-                    </label>
-
-                    <input
-                        id="parserType"
-                        class="input"
-                        type="text"
-                        maxlength="50"
-                        placeholder="pdf"
-                        autocomplete="off">
-
-                </div>
-
-                <div class="date-item">
-
-                    <label for="maxFileSizeMb">
-                        最大ファイルサイズ（MB）
-                    </label>
-
-                    <input
-                        id="maxFileSizeMb"
-                        class="input"
-                        type="number"
-                        min="1"
-                        max="10000"
-                        value="50">
-
-                </div>
-
-            </div>
-
-            <div class="date-row">
-
-                <div class="date-item">
-
-                    <label for="enabled">
-                        状態
-                    </label>
-
-                    <select
-                        id="enabled"
-                        class="input">
-
-                        <option value="true">
-                            有効
-                        </option>
-
-                        <option value="false">
-                            無効
-                        </option>
-
-                    </select>
-
-                </div>
-
-                <div class="date-item">
-
-                    <label for="sortOrder">
-                        表示順
-                    </label>
-
-                    <input
-                        id="sortOrder"
-                        class="input"
-                        type="number"
-                        min="0"
-                        max="9999"
-                        value="10">
-
-                </div>
+                </select>
 
             </div>
 
