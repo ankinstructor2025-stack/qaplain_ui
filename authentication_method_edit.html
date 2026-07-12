@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+    <title>
+        認証方式編集 - QA+Plain Knowledge Studio
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="./css/theme.css">
+</head>
+
+<body>
+
+<main class="page">
+
+    <div class="page-toolbar">
+
+        <div class="page-toolbar-title">
+            認証方式編集
+        </div>
+
+        <div class="page-toolbar-main">
+        </div>
+
+        <div class="page-toolbar-actions">
+
+            <button
+                id="saveButton"
+                type="button"
+                class="btn btn-primary">
+                保存
+            </button>
+
+            <button
+                id="backButton"
+                type="button"
+                class="btn">
+                戻る
+            </button>
+
+        </div>
+
+    </div>
+
+    <section class="card">
+
+        <div class="form-grid">
+
+            <div class="form-row">
+
+                <label for="methodKey">
+                    認証方式キー
+                </label>
+
+                <input
+                    id="methodKey"
+                    class="input"
+                    type="text"
+                    list="methodKeyOptions"
+                    maxlength="50"
+                    placeholder="候補から選択、または直接入力"
+                    autocomplete="off"
+                    spellcheck="false">
+
+                <datalist id="methodKeyOptions">
+
+                    <option value="none">
+                    <option value="basic">
+                    <option value="client_credentials">
+
+                </datalist>
+
+            </div>
+
+            <div class="form-row">
+
+                <label for="displayName">
+                    表示名
+                </label>
+
+                <input
+                    id="displayName"
+                    class="input"
+                    type="text"
+                    maxlength="100"
+                    placeholder="Basic認証"
+                    autocomplete="off">
+
+            </div>
+
+            <div class="form-row">
+
+                <label for="description">
+                    説明
+                </label>
+
+                <textarea
+                    id="description"
+                    class="input"
+                    rows="4"
+                    maxlength="500"
+                    placeholder="ユーザー名とパスワードを使用する認証方式"></textarea>
+
+            </div>
+
+            <div class="form-row">
+
+                <label for="enabled">
+                    状態
+                </label>
+
+                <select
+                    id="enabled"
+                    class="input">
+
+                    <option value="true">
+                        有効
+                    </option>
+
+                    <option value="false">
+                        無効
+                    </option>
+
+                </select>
+
+            </div>
+
+        </div>
+
+    </section>
+
+</main>
+
+<script
+    type="module"
+    src="./js/authentication_method_edit.js">
+</script>
+
+</body>
+
+</html>
