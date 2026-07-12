@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+    <title>
+        拡張子管理 - QA+Plain Knowledge Studio
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="./css/theme.css">
+</head>
+
+<body>
+
+<main class="page">
+
+    <div class="page-toolbar">
+
+        <div class="page-toolbar-title">
+            拡張子管理
+        </div>
+
+        <div class="page-toolbar-main">
+        </div>
+
+        <div class="page-toolbar-actions">
+
+            <button
+                id="newButton"
+                type="button"
+                class="btn">
+                新規
+            </button>
+
+            <button
+                id="saveButton"
+                type="button"
+                class="btn btn-primary">
+                保存
+            </button>
+
+            <button
+                id="deleteButton"
+                type="button"
+                class="btn">
+                削除
+            </button>
+
+            <button
+                id="backButton"
+                type="button"
+                class="btn">
+                戻る
+            </button>
+
+        </div>
+
+    </div>
+
+    <section class="card">
+
+        <div class="form-grid">
+
+            <div class="date-row">
+
+                <div class="date-item">
+
+                    <label for="extension">
+                        拡張子
+                    </label>
+
+                    <input
+                        id="extension"
+                        class="input"
+                        type="text"
+                        maxlength="20"
+                        placeholder="pdf">
+
+                </div>
+
+                <div class="date-item">
+
+                    <label for="displayName">
+                        表示名
+                    </label>
+
+                    <input
+                        id="displayName"
+                        class="input"
+                        type="text"
+                        maxlength="100"
+                        placeholder="PDF">
+
+                </div>
+
+            </div>
+
+            <div class="form-row">
+
+                <label for="mimeTypes">
+                    MIMEタイプ
+                </label>
+
+                <textarea
+                    id="mimeTypes"
+                    class="input"
+                    rows="4"
+                    placeholder="application/pdf"></textarea>
+
+            </div>
+
+            <div class="date-row">
+
+                <div class="date-item">
+
+                    <label for="parserType">
+                        解析方式
+                    </label>
+
+                    <input
+                        id="parserType"
+                        class="input"
+                        type="text"
+                        maxlength="50"
+                        placeholder="pdf">
+
+                </div>
+
+                <div class="date-item">
+
+                    <label for="maxFileSizeMb">
+                        最大ファイルサイズ（MB）
+                    </label>
+
+                    <input
+                        id="maxFileSizeMb"
+                        class="input"
+                        type="number"
+                        min="1"
+                        max="10000"
+                        value="50">
+
+                </div>
+
+            </div>
+
+            <div class="date-row">
+
+                <div class="date-item">
+
+                    <label for="enabled">
+                        有効／無効
+                    </label>
+
+                    <select
+                        id="enabled"
+                        class="input">
+
+                        <option value="true">
+                            有効
+                        </option>
+
+                        <option value="false">
+                            無効
+                        </option>
+
+                    </select>
+
+                </div>
+
+                <div class="date-item">
+
+                    <label for="sortOrder">
+                        表示順
+                    </label>
+
+                    <input
+                        id="sortOrder"
+                        class="input"
+                        type="number"
+                        min="0"
+                        max="9999"
+                        value="10">
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+    <section
+        class="card"
+        style="margin-top:10px;">
+
+        <div class="list-header">
+
+            <div style="width:10%;">
+                拡張子
+            </div>
+
+            <div style="width:18%;">
+                表示名
+            </div>
+
+            <div style="width:30%;">
+                MIMEタイプ
+            </div>
+
+            <div style="width:14%;">
+                解析方式
+            </div>
+
+            <div style="width:10%;">
+                最大MB
+            </div>
+
+            <div style="width:8%;">
+                状態
+            </div>
+
+            <div style="width:10%;">
+                操作
+            </div>
+
+        </div>
+
+        <div id="fileTypeList">
+        </div>
+
+    </section>
+
+</main>
+
+<script
+    type="module"
+    src="./js/file_type_maintenance.js">
+</script>
+
+</body>
+
+</html>
