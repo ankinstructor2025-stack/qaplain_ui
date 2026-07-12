@@ -156,24 +156,21 @@ async function initialize() {
 
         await waitForLogin();
 
-        await authenticatedJsonOrThrow(
-            `${API_BASE_URL}/session`,
-            {
-                method: "POST"
-            }
-        );
+        const session =
+            await authenticatedJsonOrThrow(
+                `${API_BASE_URL}/session`,
+                {
+                    method: "POST"
+                }
+            );
 
         if (!session.can_manage_users) {
-
             alert(
                 "管理権限がありません。"
             );
 
-            location.href =
-                "./menu.html";
-
+            location.href = "./menu.html";
             return;
-
         }
 
         sourceTypeSelect.addEventListener(
