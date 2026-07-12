@@ -240,7 +240,7 @@ async function handleDataSource() {
         );
 
         location.href =
-            "./data_source.html";
+            "./data_source_maintenance.html";
 
     } catch (error) {
 
