@@ -63,7 +63,7 @@ loginButton.addEventListener("click", async (event) => {
 
     if (session.is_system_administrator) {
       window.location.href =
-        "./admin_user_maintenance.html";
+        "./system_menu.html";
       return;
     }
 
