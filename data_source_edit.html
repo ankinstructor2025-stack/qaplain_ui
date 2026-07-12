@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+    <title>
+        データソース編集 - QA+Plain Knowledge Studio
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="./css/theme.css">
+</head>
+
+<body>
+
+<main class="page">
+
+    <div class="page-toolbar">
+
+        <div
+            id="pageTitle"
+            class="page-toolbar-title">
+            データソース登録
+        </div>
+
+        <div class="page-toolbar-main">
+        </div>
+
+        <div class="page-toolbar-actions">
+
+            <button
+                id="saveButton"
+                type="button"
+                class="btn btn-primary">
+                保存
+            </button>
+
+            <button
+                id="backButton"
+                type="button"
+                class="btn">
+                戻る
+            </button>
+
+        </div>
+
+    </div>
+
+    <section class="card">
+
+        <div class="section-block">
+
+            <div class="form-row">
+
+                <label for="dataSourceName">
+                    データソース名
+                </label>
+
+                <input
+                    id="dataSourceName"
+                    class="input"
+                    type="text"
+                    maxlength="200"
+                    autocomplete="off">
+
+            </div>
+
+            <div class="form-row">
+
+                <label for="sourceTypeSelect">
+                    データソース種別
+                </label>
+
+                <select
+                    id="sourceTypeSelect"
+                    class="input">
+
+                    <option value="">
+                        データソース種別を選択してください
+                    </option>
+
+                    <option value="file">
+                        ファイル
+                    </option>
+
+                    <option value="mail">
+                        メール
+                    </option>
+
+                    <option value="url">
+                        公開URL
+                    </option>
+
+                    <option value="api">
+                        公開API
+                    </option>
+
+                </select>
+
+            </div>
+
+            <div
+                id="fileSettings"
+                class="hidden">
+
+                <div class="form-row">
+
+                    <label for="fileExtensions">
+                        対象拡張子
+                    </label>
+
+                    <input
+                        id="fileExtensions"
+                        class="input"
+                        type="text"
+                        maxlength="500"
+                        placeholder=".pdf, .docx, .xlsx"
+                        autocomplete="off">
+
+                </div>
+
+            </div>
+
+            <div
+                id="mailSettings"
+                class="hidden">
+
+                <div class="form-row">
+
+                    <label for="mailExtensions">
+                        対象拡張子
+                    </label>
+
+                    <input
+                        id="mailExtensions"
+                        class="input"
+                        type="text"
+                        maxlength="500"
+                        value=".eml"
+                        autocomplete="off">
+
+                </div>
+
+            </div>
+
+            <div
+                id="connectionSettings"
+                class="hidden">
+
+                <div class="form-row">
+
+                    <label for="endpointUrl">
+                        接続先URL
+                    </label>
+
+                    <input
+                        id="endpointUrl"
+                        class="input"
+                        type="url"
+                        maxlength="2000"
+                        autocomplete="off">
+
+                </div>
+
+                <div
+                    id="httpMethodRow"
+                    class="form-row hidden">
+
+                    <label for="httpMethod">
+                        HTTPメソッド
+                    </label>
+
+                    <select
+                        id="httpMethod"
+                        class="input">
+
+                        <option value="GET">
+                            GET
+                        </option>
+
+                        <option value="POST">
+                            POST
+                        </option>
+
+                        <option value="PUT">
+                            PUT
+                        </option>
+
+                        <option value="PATCH">
+                            PATCH
+                        </option>
+
+                    </select>
+
+                </div>
+
+                <div class="form-row">
+
+                    <label for="authenticationMethodSelect">
+                        認証方式
+                    </label>
+
+                    <select
+                        id="authenticationMethodSelect"
+                        class="input">
+
+                        <option value="">
+                            認証方式を選択してください
+                        </option>
+
+                    </select>
+
+                </div>
+
+                <div
+                    id="basicAuthenticationFields"
+                    class="hidden">
+
+                    <div class="form-row">
+
+                        <label for="basicUsername">
+                            ユーザーID
+                        </label>
+
+                        <input
+                            id="basicUsername"
+                            class="input"
+                            type="text"
+                            maxlength="500"
+                            autocomplete="off">
+
+                    </div>
+
+                    <div class="form-row">
+
+                        <label for="basicPassword">
+                            パスワード
+                        </label>
+
+                        <input
+                            id="basicPassword"
+                            class="input"
+                            type="password"
+                            maxlength="1000"
+                            autocomplete="new-password">
+
+                    </div>
+
+                </div>
+
+                <div
+                    id="clientCredentialsFields"
+                    class="hidden">
+
+                    <div class="form-row">
+
+                        <label for="clientId">
+                            クライアントID
+                        </label>
+
+                        <input
+                            id="clientId"
+                            class="input"
+                            type="text"
+                            maxlength="1000"
+                            autocomplete="off">
+
+                    </div>
+
+                    <div class="form-row">
+
+                        <label for="clientSecret">
+                            クライアントシークレット
+                        </label>
+
+                        <input
+                            id="clientSecret"
+                            class="input"
+                            type="password"
+                            maxlength="1000"
+                            autocomplete="new-password">
+
+                    </div>
+
+                    <div class="form-row">
+
+                        <label for="tokenUrl">
+                            トークンURL
+                        </label>
+
+                        <input
+                            id="tokenUrl"
+                            class="input"
+                            type="url"
+                            maxlength="2000"
+                            autocomplete="off">
+
+                    </div>
+
+                    <div class="form-row">
+
+                        <label for="scope">
+                            スコープ
+                        </label>
+
+                        <input
+                            id="scope"
+                            class="input"
+                            type="text"
+                            maxlength="1000"
+                            autocomplete="off">
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="form-row">
+
+                <label for="enabled">
+                    有効
+                </label>
+
+                <input
+                    id="enabled"
+                    type="checkbox"
+                    checked>
+
+            </div>
+
+        </div>
+
+    </section>
+
+    <section class="card">
+
+        <div class="page-toolbar">
+
+            <div class="page-toolbar-title">
+                パラメータ
+            </div>
+
+            <div class="page-toolbar-main">
+            </div>
+
+            <div class="page-toolbar-actions">
+
+                <button
+                    id="addParameterButton"
+                    type="button"
+                    class="btn">
+                    追加
+                </button>
+
+            </div>
+
+        </div>
+
+        <div class="section-block">
+
+            <div class="form-grid">
+
+                <div class="form-row">
+
+                    <label for="parameterType">
+                        種類
+                    </label>
+
+                    <select
+                        id="parameterType"
+                        class="input">
+
+                        <option value="query">
+                            検索条件
+                        </option>
+
+                        <option value="header">
+                            HTTPヘッダー
+                        </option>
+
+                        <option value="body">
+                            リクエスト本文
+                        </option>
+
+                        <option value="path">
+                            パスパラメータ
+                        </option>
+
+                    </select>
+
+                </div>
+
+                <div class="form-row">
+
+                    <label for="parameterName">
+                        パラメータ名
+                    </label>
+
+                    <input
+                        id="parameterName"
+                        class="input"
+                        type="text"
+                        maxlength="500"
+                        autocomplete="off">
+
+                </div>
+
+                <div class="form-row">
+
+                    <label for="parameterValue">
+                        値
+                    </label>
+
+                    <input
+                        id="parameterValue"
+                        class="input"
+                        type="text"
+                        maxlength="2000"
+                        autocomplete="off">
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="list-header">
+
+            <div style="width:20%;">
+                種類
+            </div>
+
+            <div style="width:30%;">
+                パラメータ名
+            </div>
+
+            <div style="width:40%;">
+                値
+            </div>
+
+            <div style="width:10%;">
+                操作
+            </div>
+
+        </div>
+
+        <div id="parameterList">
+        </div>
+
+    </section>
+
+</main>
+
+<script
+    type="module"
+    src="./js/data_source_edit.js">
+</script>
+
+</body>
+
+</html>

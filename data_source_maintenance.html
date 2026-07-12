@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+    <title>
+        データソース管理 - QA+Plain Knowledge Studio
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="./css/theme.css">
+</head>
+
+<body>
+
+<main class="page">
+
+    <div class="page-toolbar">
+
+        <div class="page-toolbar-title">
+            データソース管理
+        </div>
+
+        <div class="page-toolbar-main">
+        </div>
+
+        <div class="page-toolbar-actions">
+
+            <button
+                id="addDataSourceButton"
+                type="button"
+                class="btn btn-primary">
+                新規登録
+            </button>
+
+            <button
+                id="backButton"
+                type="button"
+                class="btn">
+                戻る
+            </button>
+
+        </div>
+
+    </div>
+
+    <section class="card">
+
+        <div class="list-header">
+
+            <div style="width:22%;">
+                データソース名
+            </div>
+
+            <div style="width:14%;">
+                種別
+            </div>
+
+            <div style="width:18%;">
+                認証方式
+            </div>
+
+            <div style="width:28%;">
+                接続先
+            </div>
+
+            <div style="width:8%;">
+                有効
+            </div>
+
+            <div style="width:10%;">
+                操作
+            </div>
+
+        </div>
+
+        <div id="dataSourceList">
+            <!-- data_source_maintenance.js が一覧を表示 -->
+        </div>
+
+    </section>
+
+</main>
+
+<script
+    type="module"
+    src="./js/data_source_maintenance.js">
+</script>
+
+</body>
+
+</html>
