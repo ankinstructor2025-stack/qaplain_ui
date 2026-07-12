@@ -166,39 +166,7 @@ function renderFileTypes(
                     formatExtension(
                         fileType.extension
                     ),
-                    "10%"
-                )
-            );
-
-            row.appendChild(
-                createColumn(
-                    fileType.display_name || "",
-                    "18%"
-                )
-            );
-
-            row.appendChild(
-                createColumn(
-                    formatMimeTypes(
-                        fileType.mime_types
-                    ),
-                    "28%"
-                )
-            );
-
-            row.appendChild(
-                createColumn(
-                    fileType.parser_type || "",
-                    "14%"
-                )
-            );
-
-            row.appendChild(
-                createColumn(
-                    formatNumber(
-                        fileType.max_file_size_mb
-                    ),
-                    "10%"
+                    "40%"
                 )
             );
 
@@ -207,7 +175,7 @@ function renderFileTypes(
                     fileType.enabled
                         ? "有効"
                         : "無効",
-                    "8%"
+                    "30%"
                 )
             );
 
@@ -258,7 +226,7 @@ function createActionColumn(
         );
 
     column.style.width =
-        "12%";
+        "30%";
 
     column.className =
         "list-row-actions";
@@ -515,39 +483,6 @@ function formatExtension(
     }
 
     return `.${extension}`;
-
-}
-
-
-function formatMimeTypes(
-    mimeTypes
-) {
-
-    if (!Array.isArray(mimeTypes)) {
-        return "";
-    }
-
-    return mimeTypes.join(
-        ", "
-    );
-
-}
-
-
-function formatNumber(
-    value
-) {
-
-    if (
-        value === null ||
-        value === undefined
-    ) {
-        return "";
-    }
-
-    return String(
-        value
-    );
 
 }
 

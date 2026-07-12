@@ -23,34 +23,9 @@ const extensionInput =
         "extension"
     );
 
-const displayNameInput =
-    document.getElementById(
-        "displayName"
-    );
-
-const mimeTypesInput =
-    document.getElementById(
-        "mimeTypes"
-    );
-
-const parserTypeInput =
-    document.getElementById(
-        "parserType"
-    );
-
-const maxFileSizeMbInput =
-    document.getElementById(
-        "maxFileSizeMb"
-    );
-
 const enabledInput =
     document.getElementById(
         "enabled"
-    );
-
-const sortOrderInput =
-    document.getElementById(
-        "sortOrder"
     );
 
 
@@ -144,23 +119,8 @@ function initializeNewFileType() {
     extensionInput.value =
         "";
 
-    displayNameInput.value =
-        "";
-
-    mimeTypesInput.value =
-        "";
-
-    parserTypeInput.value =
-        "";
-
-    maxFileSizeMbInput.value =
-        "50";
-
     enabledInput.value =
         "true";
-
-    sortOrderInput.value =
-        "10";
 
     extensionInput.readOnly =
         false;
@@ -194,31 +154,10 @@ async function loadFileType() {
         extensionInput.value =
             fileType.extension || "";
 
-        displayNameInput.value =
-            fileType.display_name || "";
-
-        mimeTypesInput.value =
-            Array.isArray(
-                fileType.mime_types
-            )
-                ? fileType.mime_types.join(
-                    "\n"
-                )
-                : "";
-
-        parserTypeInput.value =
-            fileType.parser_type || "";
-
-        maxFileSizeMbInput.value =
-            fileType.max_file_size_mb ?? 50;
-
         enabledInput.value =
             fileType.enabled
                 ? "true"
                 : "false";
-
-        sortOrderInput.value =
-            fileType.sort_order ?? 10;
 
         extensionInput.readOnly =
             true;
@@ -236,8 +175,17 @@ async function loadFileType() {
 
 async function handleSave() {
 
-    const body =
-        createRequestBody();
+    const body = {
+
+        extension:
+            normalizeExtension(
+                extensionInput.value
+            ),
+
+        enabled:
+            enabledInput.value === "true"
+
+    };
 
     const validationMessage =
         validateInput(
@@ -325,54 +273,6 @@ async function handleSave() {
 }
 
 
-function createRequestBody() {
-
-    const mimeTypes =
-        mimeTypesInput.value
-            .split(
-                /\r?\n|,/
-            )
-            .map(
-                value => value.trim()
-            )
-            .filter(
-                value => value
-            );
-
-    return {
-
-        extension:
-            normalizeExtension(
-                extensionInput.value
-            ),
-
-        display_name:
-            displayNameInput.value.trim(),
-
-        mime_types:
-            mimeTypes,
-
-        parser_type:
-            parserTypeInput.value.trim(),
-
-        max_file_size_mb:
-            Number(
-                maxFileSizeMbInput.value
-            ),
-
-        enabled:
-            enabledInput.value === "true",
-
-        sort_order:
-            Number(
-                sortOrderInput.value
-            )
-
-    };
-
-}
-
-
 function validateInput(
     body
 ) {
@@ -393,60 +293,6 @@ function validateInput(
 
         return (
             "拡張子は半角英数字で入力してください。"
-        );
-
-    }
-
-    if (!body.display_name) {
-
-        return (
-            "表示名を入力してください。"
-        );
-
-    }
-
-    if (
-        body.mime_types.length === 0
-    ) {
-
-        return (
-            "MIMEタイプを入力してください。"
-        );
-
-    }
-
-    if (!body.parser_type) {
-
-        return (
-            "解析方式を入力してください。"
-        );
-
-    }
-
-    if (
-        !Number.isInteger(
-            body.max_file_size_mb
-        ) ||
-        body.max_file_size_mb < 1 ||
-        body.max_file_size_mb > 10000
-    ) {
-
-        return (
-            "最大ファイルサイズは1から10000までの整数で入力してください。"
-        );
-
-    }
-
-    if (
-        !Number.isInteger(
-            body.sort_order
-        ) ||
-        body.sort_order < 0 ||
-        body.sort_order > 9999
-    ) {
-
-        return (
-            "表示順は0から9999までの整数で入力してください。"
         );
 
     }
@@ -487,22 +333,7 @@ function setButtonState(
     extensionInput.disabled =
         disabled;
 
-    displayNameInput.disabled =
-        disabled;
-
-    mimeTypesInput.disabled =
-        disabled;
-
-    parserTypeInput.disabled =
-        disabled;
-
-    maxFileSizeMbInput.disabled =
-        disabled;
-
     enabledInput.disabled =
-        disabled;
-
-    sortOrderInput.disabled =
         disabled;
 
     saveButton.textContent =
