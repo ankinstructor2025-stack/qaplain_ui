@@ -39,17 +39,32 @@
                     データ取り込み
                 </div>
 
-                <div
-                    class="page-toolbar-main has-source">
+                <div class="page-toolbar-main has-source">
 
                     <div class="toolbar-field">
 
                         <select
-                            id="sourceSelect"
+                            id="sourceTypeSelect"
                             class="toolbar-select">
 
                             <option value="">
                                 データ取得元を選択してください
+                            </option>
+
+                            <option value="file">
+                                ファイルアップロード
+                            </option>
+
+                            <option value="mail">
+                                メールファイル
+                            </option>
+
+                            <option value="url">
+                                公開URL
+                            </option>
+
+                            <option value="api">
+                                公開API
                             </option>
 
                         </select>
@@ -88,23 +103,140 @@
                     </div>
 
                     <div
-                        id="panelKokkai"
+                        id="authenticationArea"
                         class="hidden">
 
                         <h3 class="panel-title">
-                            国会議事録取得
+                            認証設定
                         </h3>
 
                         <div class="section-block">
 
-                            <div class="compact-actions">
+                            <div class="form-row">
 
-                                <button
-                                    id="btnKokkaiRegister"
-                                    class="btn btn-primary"
-                                    type="button">
-                                    国会議事録取得
-                                </button>
+                                <label for="authenticationMethodSelect">
+                                    認証方式
+                                </label>
+
+                                <select
+                                    id="authenticationMethodSelect"
+                                    class="input">
+
+                                    <option value="">
+                                        認証方式を選択してください
+                                    </option>
+
+                                </select>
+
+                            </div>
+
+                            <div
+                                id="basicAuthenticationFields"
+                                class="hidden">
+
+                                <div class="form-grid">
+
+                                    <div class="form-row">
+
+                                        <label for="basicUsername">
+                                            ユーザー名
+                                        </label>
+
+                                        <input
+                                            id="basicUsername"
+                                            class="input"
+                                            type="text"
+                                            maxlength="200"
+                                            autocomplete="off">
+
+                                    </div>
+
+                                    <div class="form-row">
+
+                                        <label for="basicPassword">
+                                            パスワード
+                                        </label>
+
+                                        <input
+                                            id="basicPassword"
+                                            class="input"
+                                            type="password"
+                                            maxlength="500"
+                                            autocomplete="new-password">
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                            <div
+                                id="clientCredentialsFields"
+                                class="hidden">
+
+                                <div class="form-grid">
+
+                                    <div class="form-row">
+
+                                        <label for="tokenUrl">
+                                            トークンURL
+                                        </label>
+
+                                        <input
+                                            id="tokenUrl"
+                                            class="input"
+                                            type="url"
+                                            maxlength="1000"
+                                            autocomplete="off">
+
+                                    </div>
+
+                                    <div class="form-row">
+
+                                        <label for="clientId">
+                                            クライアントID
+                                        </label>
+
+                                        <input
+                                            id="clientId"
+                                            class="input"
+                                            type="text"
+                                            maxlength="500"
+                                            autocomplete="off">
+
+                                    </div>
+
+                                    <div class="form-row">
+
+                                        <label for="clientSecret">
+                                            クライアントシークレット
+                                        </label>
+
+                                        <input
+                                            id="clientSecret"
+                                            class="input"
+                                            type="password"
+                                            maxlength="1000"
+                                            autocomplete="new-password">
+
+                                    </div>
+
+                                    <div class="form-row">
+
+                                        <label for="scope">
+                                            スコープ
+                                        </label>
+
+                                        <input
+                                            id="scope"
+                                            class="input"
+                                            type="text"
+                                            maxlength="1000"
+                                            autocomplete="off">
+
+                                    </div>
+
+                                </div>
 
                             </div>
 
@@ -171,7 +303,7 @@
                         class="hidden">
 
                         <h3 class="panel-title">
-                            メール取り込み
+                            メールファイル取り込み
                         </h3>
 
                         <div class="section-block">
@@ -222,73 +354,6 @@
                     </div>
 
                     <div
-                        id="panelOpenData"
-                        class="hidden">
-
-                        <h3 class="panel-title">
-                            公開データ取得
-                        </h3>
-
-                        <div class="section-block">
-
-                            <div class="compact-actions">
-
-                                <button
-                                    id="btnFetchDatasets"
-                                    class="btn btn-primary"
-                                    type="button">
-                                    データセット取得
-                                </button>
-
-                            </div>
-
-                            <div
-                                class="
-                                    dataset-list-wrap
-                                    opendata-list-wrap
-                                ">
-
-                                <div
-                                    class="
-                                        list-header
-                                        opendata-header
-                                    ">
-
-                                    <div class="opendata-col-title">
-                                        タイトル
-                                    </div>
-
-                                    <div class="opendata-col-count">
-                                        子の数
-                                    </div>
-
-                                    <div class="opendata-col-url">
-                                        URL
-                                    </div>
-
-                                    <div class="opendata-col-status">
-                                        状態
-                                    </div>
-
-                                    <div class="opendata-col-action">
-                                        操作
-                                    </div>
-
-                                </div>
-
-                                <div
-                                    id="openDataDatasetList"
-                                    class="placeholder">
-                                    まだ取得していません
-                                </div>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                    <div
                         id="panelUrl"
                         class="hidden">
 
@@ -300,24 +365,21 @@
 
                             <div class="form-row">
 
-                                <label for="publicUrlTarget">
+                                <label for="publicUrl">
                                     取得対象URL
                                 </label>
 
                                 <input
-                                    id="publicUrlTarget"
+                                    id="publicUrl"
                                     class="input"
                                     type="url"
+                                    maxlength="2000"
                                     placeholder="https://example.com"
                                     autocomplete="off">
 
                             </div>
 
-                            <div
-                                class="
-                                    compact-actions
-                                    compact-actions-left
-                                ">
+                            <div class="compact-actions">
 
                                 <button
                                     id="btnUrlRegister"
@@ -325,56 +387,6 @@
                                     type="button">
                                     公開URL取得
                                 </button>
-
-                            </div>
-
-                            <h4
-                                class="
-                                    panel-subtitle
-                                    url-list-title
-                                ">
-                                子URL一覧
-                            </h4>
-
-                            <div
-                                class="
-                                    resource-list-wrap
-                                    resource-list-wrap-url
-                                ">
-
-                                <div
-                                    class="
-                                        list-header
-                                        url-page-header
-                                    ">
-
-                                    <div class="url-col-url">
-                                        URL
-                                    </div>
-
-                                    <div class="url-col-depth">
-                                        階層
-                                    </div>
-
-                                    <div class="url-col-score">
-                                        評価
-                                    </div>
-
-                                    <div class="url-col-status">
-                                        状態
-                                    </div>
-
-                                    <div class="url-col-action">
-                                        操作
-                                    </div>
-
-                                </div>
-
-                                <div
-                                    id="publicUrlPageList"
-                                    class="placeholder">
-                                    まだ取得していません
-                                </div>
 
                             </div>
 
@@ -394,16 +406,53 @@
 
                             <div class="form-row">
 
-                                <label for="publicApiUrl">
+                                <label for="apiUrl">
                                     API URL
                                 </label>
 
                                 <input
-                                    id="publicApiUrl"
+                                    id="apiUrl"
                                     class="input"
                                     type="url"
+                                    maxlength="2000"
                                     placeholder="https://api.example.com/data"
                                     autocomplete="off">
+
+                            </div>
+
+                            <div class="form-row">
+
+                                <label for="httpMethod">
+                                    HTTPメソッド
+                                </label>
+
+                                <select
+                                    id="httpMethod"
+                                    class="input">
+
+                                    <option value="GET">
+                                        GET
+                                    </option>
+
+                                    <option value="POST">
+                                        POST
+                                    </option>
+
+                                </select>
+
+                            </div>
+
+                            <div class="form-row">
+
+                                <label for="requestParameters">
+                                    検索条件・リクエストパラメータ
+                                </label>
+
+                                <textarea
+                                    id="requestParameters"
+                                    class="input"
+                                    rows="6"
+                                    placeholder='{"keyword":"生成AI"}'></textarea>
 
                             </div>
 
