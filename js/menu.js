@@ -1,5 +1,11 @@
-import { auth } from "./firebase-config.js";
-import { API_BASE_URL } from "./config.js";
+import {
+    auth
+} from "./firebase-config.js";
+
+import {
+    API_BASE_URL
+} from "./config.js";
+
 import {
     waitForLogin,
     authenticatedJsonOrThrow
@@ -9,19 +15,33 @@ import {
     signOut
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
+
 const userAdminButton =
-    document.getElementById("btn-user-admin");
+    document.getElementById(
+        "btn-user-admin"
+    );
 
 const tenantAdminButton =
-    document.getElementById("btn-tenant-admin");
+    document.getElementById(
+        "btn-tenant-admin"
+    );
+
+const dataSourceButton =
+    document.getElementById(
+        "btn-data-source"
+    );
 
 const logoutButton =
-    document.getElementById("btn-logout");
+    document.getElementById(
+        "btn-logout"
+    );
+
 
 document.addEventListener(
     "DOMContentLoaded",
     initialize
 );
+
 
 async function initialize() {
 
@@ -29,39 +49,70 @@ async function initialize() {
 
         await waitForLogin();
 
-        userAdminButton.addEventListener(
-            "click",
-            handleUserAdmin
-        );
+        if (userAdminButton) {
 
-        tenantAdminButton.addEventListener(
-            "click",
-            handleTenantAdmin
-        );
+            userAdminButton.addEventListener(
+                "click",
+                handleUserAdmin
+            );
 
-        logoutButton.addEventListener(
-            "click",
-            handleLogout
-        );
+        }
+
+        if (tenantAdminButton) {
+
+            tenantAdminButton.addEventListener(
+                "click",
+                handleTenantAdmin
+            );
+
+        }
+
+        if (dataSourceButton) {
+
+            dataSourceButton.addEventListener(
+                "click",
+                handleDataSource
+            );
+
+        }
+
+        if (logoutButton) {
+
+            logoutButton.addEventListener(
+                "click",
+                handleLogout
+            );
+
+        }
 
     } catch (error) {
 
-        console.error(error);
+        console.error(
+            "メニュー初期化エラー:",
+            error
+        );
 
         alert(
             error.message ||
             "ログイン状態を確認できませんでした。"
         );
 
-        location.href = "./index.html";
+        location.href =
+            "./index.html";
 
     }
 
 }
 
+
 async function handleUserAdmin() {
 
-    userAdminButton.disabled = true;
+    if (!userAdminButton) {
+        return;
+    }
+
+    userAdminButton.disabled =
+        true;
 
     try {
 
@@ -74,8 +125,13 @@ async function handleUserAdmin() {
             );
 
         if (!session.can_manage_users) {
-            alert("管理権限がありません。");
+
+            alert(
+                "管理権限がありません。"
+            );
+
             return;
+
         }
 
         location.href =
@@ -83,7 +139,10 @@ async function handleUserAdmin() {
 
     } catch (error) {
 
-        console.error(error);
+        console.error(
+            "ユーザー管理権限確認エラー:",
+            error
+        );
 
         alert(
             error.message ||
@@ -92,15 +151,22 @@ async function handleUserAdmin() {
 
     } finally {
 
-        userAdminButton.disabled = false;
+        userAdminButton.disabled =
+            false;
 
     }
 
 }
 
+
 async function handleTenantAdmin() {
 
-    tenantAdminButton.disabled = true;
+    if (!tenantAdminButton) {
+        return;
+    }
+
+    tenantAdminButton.disabled =
+        true;
 
     try {
 
@@ -114,7 +180,9 @@ async function handleTenantAdmin() {
 
         if (!session.can_manage_users) {
 
-            alert("管理権限がありません。");
+            alert(
+                "管理権限がありません。"
+            );
 
             return;
 
@@ -125,7 +193,10 @@ async function handleTenantAdmin() {
 
     } catch (error) {
 
-        console.error(error);
+        console.error(
+            "テナント管理権限確認エラー:",
+            error
+        );
 
         alert(
             error.message ||
@@ -134,25 +205,102 @@ async function handleTenantAdmin() {
 
     } finally {
 
-        tenantAdminButton.disabled = false;
+        tenantAdminButton.disabled =
+            false;
 
     }
 
 }
 
-async function handleLogout() {
+
+async function handleDataSource() {
+
+    if (!dataSourceButton) {
+        return;
+    }
+
+    dataSourceButton.disabled =
+        true;
 
     try {
 
-        await signOut(auth);
+        /*
+         * ログイン状態と利用可能期間などは
+         * session APIで確認する。
+         *
+         * tenant_idは画面から渡さず、
+         * データ取り込みAPI側で
+         * ログインユーザーから特定する。
+         */
+        await authenticatedJsonOrThrow(
+            `${API_BASE_URL}/session`,
+            {
+                method: "POST"
+            }
+        );
 
-        location.href = "./index.html";
+        location.href =
+            "./data_source.html";
 
     } catch (error) {
 
-        console.error(error);
+        console.error(
+            "データ取り込み利用確認エラー:",
+            error
+        );
 
-        alert("ログアウトに失敗しました。");
+        alert(
+            error.message ||
+            "データ取り込み画面を利用できません。"
+        );
+
+    } finally {
+
+        dataSourceButton.disabled =
+            false;
+
+    }
+
+}
+
+
+async function handleLogout() {
+
+    if (logoutButton) {
+
+        logoutButton.disabled =
+            true;
+
+    }
+
+    try {
+
+        await signOut(
+            auth
+        );
+
+        location.href =
+            "./index.html";
+
+    } catch (error) {
+
+        console.error(
+            "ログアウトエラー:",
+            error
+        );
+
+        alert(
+            "ログアウトに失敗しました。"
+        );
+
+    } finally {
+
+        if (logoutButton) {
+
+            logoutButton.disabled =
+                false;
+
+        }
 
     }
 
