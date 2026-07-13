@@ -49,8 +49,8 @@ const httpMethodRow = document.getElementById(
     "httpMethodRow"
 );
 
-const fileExtensionsInput = document.getElementById(
-    "fileExtensions"
+const fileExtensionList = document.getElementById(
+    "fileExtensionList"
 );
 
 const mailExtensionsInput = document.getElementById(
@@ -131,6 +131,7 @@ const backButton = document.getElementById(
 
 
 let parameters = [];
+let availableFileTypes = [];
 
 
 document.addEventListener(
@@ -184,7 +185,10 @@ async function initialize() {
             handleBack
         );
 
-        await loadAuthenticationMethods();
+        await Promise.all([
+            loadAuthenticationMethods(),
+            loadAvailableFileTypes()
+        ]);
 
         resetScreen();
 
@@ -273,6 +277,185 @@ async function loadAuthenticationMethods() {
 }
 
 
+async function loadAvailableFileTypes() {
+    const result = await authenticatedJsonOrThrow(
+        `${API_BASE_URL}/file-types/available`,
+        {
+            method: "GET"
+        }
+    );
+
+    availableFileTypes =
+        Array.isArray(result)
+            ? result
+            : result.file_types || [];
+
+    availableFileTypes =
+        availableFileTypes
+            .filter(
+                fileType =>
+                    fileType.enabled !== false
+            )
+            .map(
+                fileType => ({
+                    extension:
+                        normalizeFileExtension(
+                            fileType.extension
+                        )
+                })
+            )
+            .filter(
+                fileType =>
+                    fileType.extension
+            )
+            .sort(
+                (
+                    first,
+                    second
+                ) =>
+                    first.extension.localeCompare(
+                        second.extension
+                    )
+            );
+
+    renderFileExtensionList();
+}
+
+
+function renderFileExtensionList() {
+    fileExtensionList.innerHTML =
+        "";
+
+    if (
+        availableFileTypes.length === 0
+    ) {
+        const message =
+            document.createElement(
+                "div"
+            );
+
+        message.textContent =
+            "有効な拡張子が登録されていません。";
+
+        fileExtensionList.appendChild(
+            message
+        );
+
+        return;
+    }
+
+    availableFileTypes.forEach(
+        fileType => {
+            const label =
+                document.createElement(
+                    "label"
+                );
+
+            label.style.display =
+                "inline-flex";
+
+            label.style.alignItems =
+                "center";
+
+            label.style.gap =
+                "6px";
+
+            const checkbox =
+                document.createElement(
+                    "input"
+                );
+
+            checkbox.type =
+                "checkbox";
+
+            checkbox.name =
+                "fileExtension";
+
+            checkbox.value =
+                fileType.extension;
+
+            const text =
+                document.createElement(
+                    "span"
+                );
+
+            text.textContent =
+                `.${fileType.extension}`;
+
+            label.appendChild(
+                checkbox
+            );
+
+            label.appendChild(
+                text
+            );
+
+            fileExtensionList.appendChild(
+                label
+            );
+        }
+    );
+}
+
+
+function getSelectedFileExtensions() {
+    return Array.from(
+        fileExtensionList.querySelectorAll(
+            'input[name="fileExtension"]:checked'
+        )
+    ).map(
+        checkbox =>
+            normalizeFileExtension(
+                checkbox.value
+            )
+    ).filter(
+        extension =>
+            extension
+    );
+}
+
+
+function setSelectedFileExtensions(
+    extensions
+) {
+    const selectedExtensions =
+        new Set(
+            (
+                Array.isArray(extensions)
+                    ? extensions
+                    : []
+            ).map(
+                extension =>
+                    normalizeFileExtension(
+                        extension
+                    )
+            )
+        );
+
+    fileExtensionList
+        .querySelectorAll(
+            'input[name="fileExtension"]'
+        )
+        .forEach(
+            checkbox => {
+                checkbox.checked =
+                    selectedExtensions.has(
+                        normalizeFileExtension(
+                            checkbox.value
+                        )
+                    );
+            }
+        );
+}
+
+
+function clearSelectedFileExtensions() {
+    setSelectedFileExtensions(
+        []
+    );
+}
+
+
 async function loadDataSource() {
     const result = await authenticatedJsonOrThrow(
         `${API_BASE_URL}/data-sources/${encodeURIComponent(
@@ -306,10 +489,9 @@ function setDataSourceValues(
             dataSource.source_type
         );
 
-    fileExtensionsInput.value =
-        formatExtensions(
-            dataSource.file_extensions
-        );
+    setSelectedFileExtensions(
+        dataSource.file_extensions
+    );
 
     mailExtensionsInput.value =
         formatExtensions(
@@ -741,6 +923,15 @@ function validateInput() {
     }
 
     if (
+        sourceType === "file" &&
+        getSelectedFileExtensions().length === 0
+    ) {
+        return (
+            "対象拡張子を1つ以上選択してください。"
+        );
+    }
+
+    if (
         sourceType === "url" ||
         sourceType === "api"
     ) {
@@ -860,9 +1051,7 @@ function createRequestBody() {
 
     if (sourceType === "file") {
         body.file_extensions =
-            splitExtensions(
-                fileExtensionsInput.value
-            );
+            getSelectedFileExtensions();
     }
 
     if (sourceType === "mail") {
@@ -1018,8 +1207,7 @@ function resetScreen() {
     sourceTypeSelect.value =
         "";
 
-    fileExtensionsInput.value =
-        "";
+    clearSelectedFileExtensions();
 
     mailExtensionsInput.value =
         ".eml";
@@ -1065,6 +1253,22 @@ function resetScreen() {
     hideSourceSettings();
     hideAuthenticationFields();
     renderParameters();
+}
+
+
+function normalizeFileExtension(
+    extension
+) {
+    return String(
+        extension ||
+        ""
+    )
+        .trim()
+        .toLowerCase()
+        .replace(
+            /^\.+/,
+            ""
+        );
 }
 
 
