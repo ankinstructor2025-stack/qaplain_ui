@@ -344,7 +344,7 @@
         <div class="page-toolbar">
 
             <div class="page-toolbar-title">
-                パラメータ
+                項目
             </div>
 
             <div class="page-toolbar-main">
@@ -369,38 +369,8 @@
 
                 <div class="form-row">
 
-                    <label for="parameterType">
-                        種類
-                    </label>
-
-                    <select
-                        id="parameterType"
-                        class="input">
-
-                        <option value="query">
-                            検索条件
-                        </option>
-
-                        <option value="header">
-                            HTTPヘッダー
-                        </option>
-
-                        <option value="body">
-                            リクエスト本文
-                        </option>
-
-                        <option value="path">
-                            パスパラメータ
-                        </option>
-
-                    </select>
-
-                </div>
-
-                <div class="form-row">
-
                     <label for="parameterName">
-                        パラメータ名
+                        項目名
                     </label>
 
                     <input
@@ -408,6 +378,7 @@
                         class="input"
                         type="text"
                         maxlength="500"
+                        placeholder="例：name"
                         autocomplete="off">
 
                 </div>
@@ -423,6 +394,7 @@
                         class="input"
                         type="text"
                         maxlength="2000"
+                        placeholder="例：生成AI"
                         autocomplete="off">
 
                 </div>
@@ -433,15 +405,11 @@
 
         <div class="list-header">
 
-            <div style="width:20%;">
-                種類
+            <div style="width:45%;">
+                項目名
             </div>
 
-            <div style="width:30%;">
-                パラメータ名
-            </div>
-
-            <div style="width:40%;">
+            <div style="width:45%;">
                 値
             </div>
 
