@@ -111,17 +111,19 @@
 
                 <div class="form-row">
 
-                    <label for="fileExtensions">
+                    <label>
                         対象拡張子
                     </label>
 
-                    <input
-                        id="fileExtensions"
-                        class="input"
-                        type="text"
-                        maxlength="500"
-                        placeholder=".pdf, .docx, .xlsx"
-                        autocomplete="off">
+                    <div
+                        id="fileExtensionList"
+                        style="
+                            display: flex;
+                            flex-wrap: wrap;
+                            gap: 12px 24px;
+                            padding: 12px 0;
+                        ">
+                    </div>
 
                 </div>
 
