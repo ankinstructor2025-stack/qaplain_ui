@@ -8,161 +8,126 @@ import {
 } from "./common.js";
 
 
-const queryParameters =
-    new URLSearchParams(
-        location.search
-    );
+const queryParameters = new URLSearchParams(
+    location.search
+);
 
-const dataSourceId =
-    queryParameters.get(
-        "id"
-    );
+const dataSourceId = queryParameters.get(
+    "id"
+);
 
-const isEditMode =
-    Boolean(
-        dataSourceId
-    );
+const isEditMode = Boolean(
+    dataSourceId
+);
 
 
-const pageTitle =
-    document.getElementById(
-        "pageTitle"
-    );
+const pageTitle = document.getElementById(
+    "pageTitle"
+);
 
-const dataSourceNameInput =
-    document.getElementById(
-        "dataSourceName"
-    );
+const dataSourceNameInput = document.getElementById(
+    "dataSourceName"
+);
 
-const sourceTypeSelect =
-    document.getElementById(
-        "sourceTypeSelect"
-    );
+const sourceTypeSelect = document.getElementById(
+    "sourceTypeSelect"
+);
 
-const fileSettings =
-    document.getElementById(
-        "fileSettings"
-    );
+const fileSettings = document.getElementById(
+    "fileSettings"
+);
 
-const mailSettings =
-    document.getElementById(
-        "mailSettings"
-    );
+const mailSettings = document.getElementById(
+    "mailSettings"
+);
 
-const connectionSettings =
-    document.getElementById(
-        "connectionSettings"
-    );
+const connectionSettings = document.getElementById(
+    "connectionSettings"
+);
 
-const httpMethodRow =
-    document.getElementById(
-        "httpMethodRow"
-    );
+const httpMethodRow = document.getElementById(
+    "httpMethodRow"
+);
 
-const fileExtensionsInput =
-    document.getElementById(
-        "fileExtensions"
-    );
+const fileExtensionsInput = document.getElementById(
+    "fileExtensions"
+);
 
-const mailExtensionsInput =
-    document.getElementById(
-        "mailExtensions"
-    );
+const mailExtensionsInput = document.getElementById(
+    "mailExtensions"
+);
 
-const endpointUrlInput =
-    document.getElementById(
-        "endpointUrl"
-    );
+const endpointUrlInput = document.getElementById(
+    "endpointUrl"
+);
 
-const httpMethodSelect =
-    document.getElementById(
-        "httpMethod"
-    );
+const httpMethodSelect = document.getElementById(
+    "httpMethod"
+);
 
-const authenticationMethodSelect =
-    document.getElementById(
-        "authenticationMethodSelect"
-    );
+const authenticationMethodSelect = document.getElementById(
+    "authenticationMethodSelect"
+);
 
-const basicAuthenticationFields =
-    document.getElementById(
-        "basicAuthenticationFields"
-    );
+const basicAuthenticationFields = document.getElementById(
+    "basicAuthenticationFields"
+);
 
-const clientCredentialsFields =
-    document.getElementById(
-        "clientCredentialsFields"
-    );
+const clientCredentialsFields = document.getElementById(
+    "clientCredentialsFields"
+);
 
-const basicUsernameInput =
-    document.getElementById(
-        "basicUsername"
-    );
+const basicUsernameInput = document.getElementById(
+    "basicUsername"
+);
 
-const basicPasswordInput =
-    document.getElementById(
-        "basicPassword"
-    );
+const basicPasswordInput = document.getElementById(
+    "basicPassword"
+);
 
-const clientIdInput =
-    document.getElementById(
-        "clientId"
-    );
+const clientIdInput = document.getElementById(
+    "clientId"
+);
 
-const clientSecretInput =
-    document.getElementById(
-        "clientSecret"
-    );
+const clientSecretInput = document.getElementById(
+    "clientSecret"
+);
 
-const tokenUrlInput =
-    document.getElementById(
-        "tokenUrl"
-    );
+const tokenUrlInput = document.getElementById(
+    "tokenUrl"
+);
 
-const scopeInput =
-    document.getElementById(
-        "scope"
-    );
+const scopeInput = document.getElementById(
+    "scope"
+);
 
-const enabledInput =
-    document.getElementById(
-        "enabled"
-    );
+const enabledInput = document.getElementById(
+    "enabled"
+);
 
-const parameterTypeSelect =
-    document.getElementById(
-        "parameterType"
-    );
+const parameterNameInput = document.getElementById(
+    "parameterName"
+);
 
-const parameterNameInput =
-    document.getElementById(
-        "parameterName"
-    );
+const parameterValueInput = document.getElementById(
+    "parameterValue"
+);
 
-const parameterValueInput =
-    document.getElementById(
-        "parameterValue"
-    );
+const parameterList = document.getElementById(
+    "parameterList"
+);
 
-const parameterList =
-    document.getElementById(
-        "parameterList"
-    );
+const addParameterButton = document.getElementById(
+    "addParameterButton"
+);
 
-const addParameterButton =
-    document.getElementById(
-        "addParameterButton"
-    );
+const saveButton = document.getElementById(
+    "saveButton"
+);
 
-const saveButton =
-    document.getElementById(
-        "saveButton"
-    );
-
-const backButton =
-    document.getElementById(
-        "backButton"
-    );
+const backButton = document.getElementById(
+    "backButton"
+);
 
 
 let parameters = [];
@@ -175,30 +140,23 @@ document.addEventListener(
 
 
 async function initialize() {
-
     try {
-
         await waitForLogin();
 
-        const session =
-            await authenticatedJsonOrThrow(
-                `${API_BASE_URL}/session`,
-                {
-                    method: "POST"
-                }
-            );
+        const session = await authenticatedJsonOrThrow(
+            `${API_BASE_URL}/session`,
+            {
+                method: "POST"
+            }
+        );
 
         if (!session.can_manage_users) {
-
             alert(
                 "管理権限がありません。"
             );
 
-            location.href =
-                "./menu.html";
-
+            location.href = "./menu.html";
             return;
-
         }
 
         sourceTypeSelect.addEventListener(
@@ -231,21 +189,15 @@ async function initialize() {
         resetScreen();
 
         if (isEditMode) {
-
             pageTitle.textContent =
                 "データソース編集";
 
             await loadDataSource();
-
         } else {
-
             pageTitle.textContent =
                 "データソース登録";
-
         }
-
     } catch (error) {
-
         console.error(
             "データソース編集画面初期化エラー:",
             error
@@ -258,21 +210,17 @@ async function initialize() {
 
         location.href =
             "./data_source_maintenance.html";
-
     }
-
 }
 
 
 async function loadAuthenticationMethods() {
-
-    const result =
-        await authenticatedJsonOrThrow(
-            `${API_BASE_URL}/authentication-methods/available`,
-            {
-                method: "GET"
-            }
-        );
+    const result = await authenticatedJsonOrThrow(
+        `${API_BASE_URL}/authentication-methods/available`,
+        {
+            method: "GET"
+        }
+    );
 
     const authenticationMethods =
         Array.isArray(result)
@@ -282,10 +230,9 @@ async function loadAuthenticationMethods() {
     authenticationMethodSelect.innerHTML =
         "";
 
-    const placeholder =
-        document.createElement(
-            "option"
-        );
+    const placeholder = document.createElement(
+        "option"
+    );
 
     placeholder.value =
         "";
@@ -303,7 +250,6 @@ async function loadAuthenticationMethods() {
         )
         .forEach(
             method => {
-
                 const option =
                     document.createElement(
                         "option"
@@ -322,24 +268,20 @@ async function loadAuthenticationMethods() {
                 authenticationMethodSelect.appendChild(
                     option
                 );
-
             }
         );
-
 }
 
 
 async function loadDataSource() {
-
-    const result =
-        await authenticatedJsonOrThrow(
-            `${API_BASE_URL}/data-sources/${encodeURIComponent(
-                dataSourceId
-            )}`,
-            {
-                method: "GET"
-            }
-        );
+    const result = await authenticatedJsonOrThrow(
+        `${API_BASE_URL}/data-sources/${encodeURIComponent(
+            dataSourceId
+        )}`,
+        {
+            method: "GET"
+        }
+    );
 
     const dataSource =
         result.data_source ||
@@ -348,14 +290,12 @@ async function loadDataSource() {
     setDataSourceValues(
         dataSource
     );
-
 }
 
 
 function setDataSourceValues(
     dataSource
 ) {
-
     dataSourceNameInput.value =
         dataSource.data_source_name ||
         dataSource.name ||
@@ -431,11 +371,6 @@ function setDataSourceValues(
                         parameter.id ||
                         "",
 
-                    parameter_type:
-                        normalizeParameterType(
-                            parameter.parameter_type
-                        ),
-
                     parameter_name:
                         parameter.parameter_name ||
                         "",
@@ -452,65 +387,51 @@ function setDataSourceValues(
             : [];
 
     handleSourceTypeChanged();
-
     handleAuthenticationMethodChanged();
-
     renderParameters();
-
 }
 
 
 function handleSourceTypeChanged() {
-
     hideSourceSettings();
 
     const sourceType =
         sourceTypeSelect.value;
 
     if (sourceType === "file") {
-
         fileSettings.classList.remove(
             "hidden"
         );
 
         return;
-
     }
 
     if (sourceType === "mail") {
-
         mailSettings.classList.remove(
             "hidden"
         );
 
         return;
-
     }
 
     if (
         sourceType === "url" ||
         sourceType === "api"
     ) {
-
         connectionSettings.classList.remove(
             "hidden"
         );
-
     }
 
     if (sourceType === "api") {
-
         httpMethodRow.classList.remove(
             "hidden"
         );
-
     }
-
 }
 
 
 function hideSourceSettings() {
-
     fileSettings.classList.add(
         "hidden"
     );
@@ -526,12 +447,10 @@ function hideSourceSettings() {
     httpMethodRow.classList.add(
         "hidden"
     );
-
 }
 
 
 function handleAuthenticationMethodChanged() {
-
     hideAuthenticationFields();
 
     const methodKey =
@@ -540,30 +459,26 @@ function handleAuthenticationMethodChanged() {
         );
 
     if (methodKey === "basic") {
-
         basicAuthenticationFields.classList.remove(
             "hidden"
         );
 
         return;
-
     }
 
-    if (isClientCredentialsMethod(
-        methodKey
-    )) {
-
+    if (
+        isClientCredentialsMethod(
+            methodKey
+        )
+    ) {
         clientCredentialsFields.classList.remove(
             "hidden"
         );
-
     }
-
 }
 
 
 function hideAuthenticationFields() {
-
     basicAuthenticationFields.classList.add(
         "hidden"
     );
@@ -571,17 +486,10 @@ function hideAuthenticationFields() {
     clientCredentialsFields.classList.add(
         "hidden"
     );
-
 }
 
 
 function handleAddParameter() {
-
-    const parameterType =
-        normalizeParameterType(
-            parameterTypeSelect.value
-        );
-
     const parameterName =
         parameterNameInput.value.trim();
 
@@ -589,38 +497,36 @@ function handleAddParameter() {
         parameterValueInput.value;
 
     if (!parameterName) {
-
         alert(
-            "パラメータ名を入力してください。"
+            "項目名を入力してください。"
         );
 
         return;
-
     }
 
     const duplicated =
         parameters.some(
             parameter =>
-                parameter.parameter_type === parameterType &&
-                parameter.parameter_name === parameterName
+                String(
+                    parameter.parameter_name ||
+                    ""
+                )
+                    .trim()
+                    .toLowerCase() ===
+                parameterName.toLowerCase()
         );
 
     if (duplicated) {
-
         alert(
-            "同じ種類とパラメータ名が登録されています。"
+            "同じ項目名が登録されています。"
         );
 
         return;
-
     }
 
     parameters.push({
         parameter_id:
             "",
-
-        parameter_type:
-            parameterType,
 
         parameter_name:
             parameterName,
@@ -639,23 +545,19 @@ function handleAddParameter() {
         "";
 
     renderParameters();
-
 }
 
 
 function renderParameters() {
-
     parameterList.innerHTML =
         "";
 
     if (parameters.length === 0) {
-
         showParameterMessage(
-            "パラメータは登録されていません。"
+            "項目は登録されていません。"
         );
 
         return;
-
     }
 
     parameters.forEach(
@@ -663,7 +565,6 @@ function renderParameters() {
             parameter,
             index
         ) => {
-
             const row =
                 document.createElement(
                     "div"
@@ -674,24 +575,15 @@ function renderParameters() {
 
             row.appendChild(
                 createTextColumn(
-                    getParameterTypeLabel(
-                        parameter.parameter_type
-                    ),
-                    "20%"
-                )
-            );
-
-            row.appendChild(
-                createTextColumn(
                     parameter.parameter_name,
-                    "30%"
+                    "45%"
                 )
             );
 
             row.appendChild(
                 createTextColumn(
                     parameter.parameter_value,
-                    "40%"
+                    "45%"
                 )
             );
 
@@ -704,10 +596,8 @@ function renderParameters() {
             parameterList.appendChild(
                 row
             );
-
         }
     );
-
 }
 
 
@@ -715,7 +605,6 @@ function createTextColumn(
     text,
     width
 ) {
-
     const column =
         document.createElement(
             "div"
@@ -728,14 +617,12 @@ function createTextColumn(
         text ?? "";
 
     return column;
-
 }
 
 
 function createParameterActionColumn(
     index
 ) {
-
     const column =
         document.createElement(
             "div"
@@ -775,14 +662,12 @@ function createParameterActionColumn(
     );
 
     return column;
-
 }
 
 
 function deleteParameter(
     index
 ) {
-
     parameters.splice(
         index,
         1
@@ -802,14 +687,12 @@ function deleteParameter(
         );
 
     renderParameters();
-
 }
 
 
 function showParameterMessage(
     message
 ) {
-
     const row =
         document.createElement(
             "div"
@@ -836,130 +719,110 @@ function showParameterMessage(
     parameterList.appendChild(
         row
     );
-
 }
 
 
 function validateInput() {
-
-    if (!dataSourceNameInput.value.trim()) {
-
+    if (
+        !dataSourceNameInput.value.trim()
+    ) {
         return (
             "データソース名を入力してください。"
         );
-
     }
 
     const sourceType =
         sourceTypeSelect.value;
 
     if (!sourceType) {
-
         return (
             "データソース種別を選択してください。"
         );
-
     }
 
     if (
         sourceType === "url" ||
         sourceType === "api"
     ) {
-
-        if (!endpointUrlInput.value.trim()) {
-
+        if (
+            !endpointUrlInput.value.trim()
+        ) {
             return (
                 "接続先URLを入力してください。"
             );
-
         }
 
         const authenticationMessage =
             validateAuthentication();
 
         if (authenticationMessage) {
-
             return authenticationMessage;
-
         }
-
     }
 
     return "";
-
 }
 
 
 function validateAuthentication() {
-
     const methodKey =
         normalizeAuthenticationMethodKey(
             authenticationMethodSelect.value
         );
 
     if (!methodKey) {
-
         return (
             "認証方式を選択してください。"
         );
-
     }
 
     if (methodKey === "basic") {
-
-        if (!basicUsernameInput.value.trim()) {
-
+        if (
+            !basicUsernameInput.value.trim()
+        ) {
             return (
                 "ユーザーIDを入力してください。"
             );
-
         }
 
         if (
             !isEditMode &&
             !basicPasswordInput.value
         ) {
-
             return (
                 "パスワードを入力してください。"
             );
-
         }
-
     }
 
-    if (isClientCredentialsMethod(
-        methodKey
-    )) {
-
-        if (!clientIdInput.value.trim()) {
-
+    if (
+        isClientCredentialsMethod(
+            methodKey
+        )
+    ) {
+        if (
+            !clientIdInput.value.trim()
+        ) {
             return (
                 "クライアントIDを入力してください。"
             );
-
         }
 
         if (
             !isEditMode &&
             !clientSecretInput.value
         ) {
-
             return (
                 "クライアントシークレットを入力してください。"
             );
-
         }
-
     }
 
     return "";
-
 }
 
 
 function createRequestBody() {
-
     const sourceType =
         sourceTypeSelect.value;
 
@@ -983,9 +846,6 @@ function createRequestBody() {
                         parameter.parameter_id ||
                         undefined,
 
-                    parameter_type:
-                        parameter.parameter_type,
-
                     parameter_name:
                         parameter.parameter_name,
 
@@ -999,28 +859,23 @@ function createRequestBody() {
     };
 
     if (sourceType === "file") {
-
         body.file_extensions =
             splitExtensions(
                 fileExtensionsInput.value
             );
-
     }
 
     if (sourceType === "mail") {
-
         body.file_extensions =
             splitExtensions(
                 mailExtensionsInput.value
             );
-
     }
 
     if (
         sourceType === "url" ||
         sourceType === "api"
     ) {
-
         body.endpoint_url =
             endpointUrlInput.value.trim();
 
@@ -1033,16 +888,13 @@ function createRequestBody() {
             body,
             createAuthenticationRequest()
         );
-
     }
 
     return body;
-
 }
 
 
 function createAuthenticationRequest() {
-
     const methodKey =
         normalizeAuthenticationMethodKey(
             authenticationMethodSelect.value
@@ -1054,31 +906,26 @@ function createAuthenticationRequest() {
     };
 
     if (methodKey === "basic") {
-
         authentication.username =
             basicUsernameInput.value.trim();
 
         if (basicPasswordInput.value) {
-
             authentication.password =
                 basicPasswordInput.value;
-
         }
-
     }
 
-    if (isClientCredentialsMethod(
-        methodKey
-    )) {
-
+    if (
+        isClientCredentialsMethod(
+            methodKey
+        )
+    ) {
         authentication.client_id =
             clientIdInput.value.trim();
 
         if (clientSecretInput.value) {
-
             authentication.client_secret =
                 clientSecretInput.value;
-
         }
 
         authentication.token_url =
@@ -1086,34 +933,28 @@ function createAuthenticationRequest() {
 
         authentication.scope =
             scopeInput.value.trim();
-
     }
 
     return authentication;
-
 }
 
 
 async function handleSave() {
-
     const validationMessage =
         validateInput();
 
     if (validationMessage) {
-
         alert(
             validationMessage
         );
 
         return;
-
     }
 
     const body =
         createRequestBody();
 
     try {
-
         const requestUrl =
             isEditMode
                 ? `${API_BASE_URL}/data-sources/${encodeURIComponent(
@@ -1156,9 +997,7 @@ async function handleSave() {
 
         location.href =
             "./data_source_maintenance.html";
-
     } catch (error) {
-
         console.error(
             "データソース保存エラー:",
             error
@@ -1168,14 +1007,11 @@ async function handleSave() {
             error.message ||
             "データソースの保存に失敗しました。"
         );
-
     }
-
 }
 
 
 function resetScreen() {
-
     dataSourceNameInput.value =
         "";
 
@@ -1218,9 +1054,6 @@ function resetScreen() {
     enabledInput.checked =
         true;
 
-    parameterTypeSelect.value =
-        "query";
-
     parameterNameInput.value =
         "";
 
@@ -1230,33 +1063,29 @@ function resetScreen() {
     parameters = [];
 
     hideSourceSettings();
-
     hideAuthenticationFields();
-
     renderParameters();
-
 }
 
 
 function normalizeSourceType(
     sourceType
 ) {
-
     return String(
-        sourceType || ""
+        sourceType ||
+        ""
     )
         .trim()
         .toLowerCase();
-
 }
 
 
 function normalizeAuthenticationMethodKey(
     methodKey
 ) {
-
     return String(
-        methodKey || ""
+        methodKey ||
+        ""
     )
         .trim()
         .toLowerCase()
@@ -1264,68 +1093,26 @@ function normalizeAuthenticationMethodKey(
             "-",
             "_"
         );
-
-}
-
-
-function normalizeParameterType(
-    parameterType
-) {
-
-    return String(
-        parameterType || "query"
-    )
-        .trim()
-        .toLowerCase();
 }
 
 
 function isClientCredentialsMethod(
     methodKey
 ) {
-
     return (
         methodKey === "credential" ||
         methodKey === "credentials" ||
         methodKey === "client_credentials"
     );
-
-}
-
-
-function getParameterTypeLabel(
-    parameterType
-) {
-
-    const labels = {
-        query:
-            "検索条件",
-
-        header:
-            "HTTPヘッダー",
-
-        body:
-            "リクエスト本文",
-
-        path:
-            "パスパラメータ"
-    };
-
-    return (
-        labels[parameterType] ||
-        parameterType ||
-        ""
-    );
-
 }
 
 
 function splitExtensions(
     value
 ) {
-
     return String(
-        value || ""
+        value ||
+        ""
     )
         .split(
             ","
@@ -1338,32 +1125,27 @@ function splitExtensions(
             extension =>
                 extension
         );
-
 }
 
 
 function formatExtensions(
     extensions
 ) {
-
-    if (Array.isArray(
-        extensions
-    )) {
-
+    if (
+        Array.isArray(
+            extensions
+        )
+    ) {
         return extensions.join(
             ", "
         );
-
     }
 
     return extensions || "";
-
 }
 
 
 function handleBack() {
-
     location.href =
         "./data_source_maintenance.html";
-
 }
