@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>データ取得</title>
+  <link rel="stylesheet" href="./css/theme.css">
+  <link rel="stylesheet" href="./css/data_import.css">
+</head>
+<body>
+
+<div id="dataImportPage" class="page ds-page">
+  <div id="dataImportCard" class="card ds-card">
+    <div class="ds-wrap">
+
+      <div id="pageToolbar"></div>
+
+      <div class="main-area">
+        <div class="work-panel">
+          <div id="panelKokkai" class="hidden">
+            <h3 class="panel-title">国会議事録取得</h3>
+
+            <div class="section-block">
+              <div class="compact-actions">
+                <button id="btnKokkaiRegister" class="btn btn-primary" type="button">
+                  国会議事録取得
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div id="panelUpload" class="hidden">
+            <h3 class="panel-title">ファイルアップロード</h3>
+
+            <div class="section-block">
+              <div>
+                <label for="uploadFileInput">ファイル</label>
+
+                <div class="upload-file-row">
+                  <input id="uploadFileInput" class="upload-file-input" type="file">
+
+                  <label for="uploadFileInput" class="upload-file-btn">
+                    ファイルの選択
+                  </label>
+
+                  <div id="uploadFileName" class="upload-file-name is-empty">
+                    ファイルが選択されていません
+                  </div>
+                </div>
+              </div>
+
+              <div class="compact-actions">
+                <button id="btnUploadRegister" class="btn btn-primary" type="button">
+                  アップロード
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div id="panelOpenData" class="hidden">
+            <div class="section-block">
+              <div class="compact-actions">
+                <button id="btnFetchDatasets" class="btn btn-primary" type="button">
+                  データセット取得
+                </button>
+              </div>
+
+              <div class="dataset-list-wrap opendata-list-wrap">
+                <div class="list-header opendata-header">
+                  <div class="opendata-col-title">タイトル</div>
+                  <div class="opendata-col-count">子の数</div>
+                  <div class="opendata-col-url">URL</div>
+                  <div class="opendata-col-status">状態</div>
+                  <div class="opendata-col-action">操作</div>
+                </div>
+
+                <div id="openDataDatasetList" class="placeholder">
+                  まだ取得していません
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div id="panelUrl" class="hidden">
+            <div class="url-panel">
+              <div id="publicUrlTargetDisplay" class="public-url-display"></div>
+
+              <div class="compact-actions compact-actions-left">
+                <button id="btnUrlRegister" class="btn btn-primary" type="button">
+                  公開URL取得
+                </button>
+              </div>
+
+              <h4 class="panel-subtitle url-list-title">子URL一覧</h4>
+
+              <div class="resource-list-wrap resource-list-wrap-url">
+                <div class="list-header url-page-header">
+                  <div class="url-col-url">URL</div>
+                  <div class="url-col-depth">階層</div>
+                  <div class="url-col-score">評価</div>
+                  <div class="url-col-status">状態</div>
+                  <div class="url-col-action">操作</div>
+                </div>
+
+                <div id="publicUrlPageList" class="placeholder">
+                  &nbsp;
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="log" id="logBox">
+          <pre id="logText"></pre>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="./js/common_toolbar.js"></script>
+<script src="./js/data_import_upload.js"></script>
+<script src="./js/data_import_kokkai.js"></script>
+<script src="./js/data_import_opendata.js"></script>
+<script src="./js/data_import_url.js"></script>
+<script src="./js/data_import.js"></script>
+
+<script>
+renderPageToolbar({
+  mountId: "pageToolbar",
+  title: "データ取得",
+  showSourceSelect: true,
+  showDbSelect: false,
+  enableDbAutoLoad: false,
+  actions: [
+    { id: "btnMenu", label: "メニュー" },
+    { id: "btnLogout", label: "ログアウト" }
+  ]
+});
+</script>
+
+</body>
+</html>
