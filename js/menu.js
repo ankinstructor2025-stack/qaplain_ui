@@ -31,6 +31,11 @@ const dataSourceButton =
         "btn-data-source"
     );
 
+const dataImportButton =
+    document.getElementById(
+        "btn-data-import"
+    );
+
 const logoutButton =
     document.getElementById(
         "btn-logout"
@@ -72,6 +77,15 @@ async function initialize() {
             dataSourceButton.addEventListener(
                 "click",
                 handleDataSource
+            );
+
+        }
+
+        if (dataImportButton) {
+
+            dataImportButton.addEventListener(
+                "click",
+                handleDataImport
             );
 
         }
@@ -224,14 +238,6 @@ async function handleDataSource() {
 
     try {
 
-        /*
-         * ログイン状態と利用可能期間などは
-         * session APIで確認する。
-         *
-         * tenant_idは画面から渡さず、
-         * データ取り込みAPI側で
-         * ログインユーザーから特定する。
-         */
         await authenticatedJsonOrThrow(
             `${API_BASE_URL}/session`,
             {
@@ -245,18 +251,61 @@ async function handleDataSource() {
     } catch (error) {
 
         console.error(
-            "データ取り込み利用確認エラー:",
+            "データソース利用確認エラー:",
             error
         );
 
         alert(
             error.message ||
-            "データ取り込み画面を利用できません。"
+            "データソース画面を利用できません。"
         );
 
     } finally {
 
         dataSourceButton.disabled =
+            false;
+
+    }
+
+}
+
+
+async function handleDataImport() {
+
+    if (!dataImportButton) {
+        return;
+    }
+
+    dataImportButton.disabled =
+        true;
+
+    try {
+
+        await authenticatedJsonOrThrow(
+            `${API_BASE_URL}/session`,
+            {
+                method: "POST"
+            }
+        );
+
+        location.href =
+            "./data_import.html";
+
+    } catch (error) {
+
+        console.error(
+            "データ取込利用確認エラー:",
+            error
+        );
+
+        alert(
+            error.message ||
+            "データ取込画面を利用できません。"
+        );
+
+    } finally {
+
+        dataImportButton.disabled =
             false;
 
     }
