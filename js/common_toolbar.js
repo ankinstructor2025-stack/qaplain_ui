@@ -20,7 +20,7 @@
   const DEFAULT_MENU_URL = "./menu.html";
   const DEFAULT_LOGOUT_URL = "./index.html";
   const DEFAULT_API_BASE =
-    "https://ank-api-986862757498.asia-northeast1.run.app/";
+    "https://qaplain-api-986862757498.asia-northeast1.run.app/";
 
   let toolbarState = {
     mountId: "",

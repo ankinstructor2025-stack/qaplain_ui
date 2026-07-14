@@ -19,7 +19,7 @@ console.log("data_import.js loaded");
   "use strict";
 
   const API_BASE =
-    "https://ank-api-986862757498.asia-northeast1.run.app/v1";
+    "https://qaplain-api-986862757498.asia-northeast1.run.app";
 
   const panelEmpty =
     document.getElementById(
