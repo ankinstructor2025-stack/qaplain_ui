@@ -3,7 +3,7 @@
  *
  * 役割
  * - 共通ツールバー描画
- * - /data-sources/available から利用可能なデータソースを取得
+ * - /data-sources からデータソースを取得し、有効なものだけ表示
  * - データソース選択変更をカスタムイベントで通知
  * - enableDbAutoLoad=true の場合のみナレッジDB一覧を取得
  * - メニュー / ログアウトの共通動作
@@ -393,6 +393,9 @@
       sourceType:
         sourceType,
 
+      authenticationMethodKey:
+        source?.authentication_method_key || "",
+
       dataSource:
         source
     });
@@ -461,7 +464,7 @@
   async function loadAvailableDataSources() {
     const data =
       await authenticatedJson(
-        `${toolbarState.apiBase}/data-sources/available`,
+        buildApiUrl(toolbarState.apiBase, "data-sources"),
         {
           method: "GET"
         }
@@ -497,6 +500,11 @@
           source_type:
             normalizeSourceType(
               item.source_type
+            ),
+
+          authentication_method_key:
+            normalizeAuthenticationMethodKey(
+              item.authentication_method_key
             )
         })
       )
@@ -662,6 +670,7 @@
           <option
             value="${escapeHtml(source.data_source_id)}"
             data-source-type="${escapeHtml(source.source_type)}"
+            data-authentication-method-key="${escapeHtml(source.authentication_method_key)}"
           >
             ${escapeHtml(source.data_source_name)}
           </option>
@@ -757,6 +766,61 @@
 
     select.disabled =
       true;
+  }
+
+
+  function buildApiUrl(
+    apiBase,
+    path
+  ) {
+    const base =
+      String(
+        apiBase || ""
+      ).replace(
+        /\/+$/,
+        ""
+      );
+
+    const normalizedPath =
+      String(
+        path || ""
+      ).replace(
+        /^\/+/,
+        ""
+      );
+
+    return `${base}/${normalizedPath}`;
+  }
+
+
+  function normalizeAuthenticationMethodKey(
+    value
+  ) {
+    const methodKey =
+      String(
+        value || ""
+      )
+        .trim()
+        .toLowerCase()
+        .replace(
+          /-/g,
+          "_"
+        );
+
+    switch (methodKey) {
+      case "":
+      case "none":
+      case "no_auth":
+      case "no_authentication":
+        return "none";
+
+      case "credential":
+      case "credentials":
+        return "client_credentials";
+
+      default:
+        return methodKey;
+    }
   }
 
 
