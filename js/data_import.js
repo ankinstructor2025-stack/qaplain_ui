@@ -1,411 +1,791 @@
+/**
+ * data_import.js
+ *
+ * 役割
+ * - 共通ツールバーで選択されたデータソースを保持
+ * - source_typeに応じて入力パネルを切り替え
+ * - authentication_method_keyに応じて取込処理を振り分け
+ *
+ * 使用する処理:
+ * - DataImportFile
+ * - DataImportNone
+ * - DataImportBasic
+ * - DataImportClientCredentials
+ */
+
 console.log("data_import.js loaded");
 
-const panelEmpty = document.getElementById("panelEmpty");
-const panelKokkai = document.getElementById("panelKokkai");
-const panelUpload = document.getElementById("panelUpload");
-const panelOpenData = document.getElementById("panelOpenData");
-const panelUrl = document.getElementById("panelUrl");
-const panelApi = document.getElementById("panelApi");
+(function () {
+  "use strict";
 
-const publicUrlTarget = document.getElementById("publicUrlTarget");
-const publicUrlPageList = document.getElementById("publicUrlPageList");
+  const API_BASE =
+    "https://ank-api-986862757498.asia-northeast1.run.app/v1";
 
-const logBox = document.getElementById("logBox");
-const logText = document.getElementById("logText");
-const btnClearLog = document.getElementById("btnClearLog");
+  const panelEmpty =
+    document.getElementById(
+      "panelEmpty"
+    );
 
-const btnKokkaiRegister = document.getElementById("btnKokkaiRegister");
-const btnUploadRegister = document.getElementById("btnUploadRegister");
-const btnFetchDatasets = document.getElementById("btnFetchDatasets");
-const btnUrlRegister = document.getElementById("btnUrlRegister");
+  const panelUpload =
+    document.getElementById(
+      "panelUpload"
+    );
 
-const API_BASE = "https://ank-api-986862757498.asia-northeast1.run.app/";
+  const panelUrl =
+    document.getElementById(
+      "panelUrl"
+    );
 
-let sourceList = [];
-let sourceMap = {};
-let currentSourceKey = "";
-let publicUrlConfigCache = null;
+  const panelApi =
+    document.getElementById(
+      "panelApi"
+    );
 
-function writeLog(msg) {
-  if (!logText) return;
+  /*
+   * 旧画面との互換用。
+   * panelApiがHTMLにない場合だけ使用する。
+   */
+  const panelKokkai =
+    document.getElementById(
+      "panelKokkai"
+    );
 
-  const line = String(msg ?? "");
-  const now = new Date();
-  const hh = String(now.getHours()).padStart(2, "0");
-  const mm = String(now.getMinutes()).padStart(2, "0");
-  const ss = String(now.getSeconds()).padStart(2, "0");
+  const panelOpenData =
+    document.getElementById(
+      "panelOpenData"
+    );
 
-  const prefix = `[${hh}:${mm}:${ss}] `;
-  logText.textContent += `${prefix}${line}\n`;
-  logText.scrollTop = logText.scrollHeight;
-}
+  const logText =
+    document.getElementById(
+      "logText"
+    );
 
-function clearLog() {
-  if (!logText) return;
-  logText.textContent = "";
-}
+  const btnClearLog =
+    document.getElementById(
+      "btnClearLog"
+    );
 
-function getSourceSelect() {
-  return document.getElementById("sourceSelect");
-}
+  const btnUploadRegister =
+    document.getElementById(
+      "btnUploadRegister"
+    );
 
-function hideAllPanels() {
-  if (panelEmpty) panelEmpty.classList.add("hidden");
-  if (panelKokkai) panelKokkai.classList.add("hidden");
-  if (panelUpload) panelUpload.classList.add("hidden");
-  if (panelOpenData) panelOpenData.classList.add("hidden");
-  if (panelUrl) panelUrl.classList.add("hidden");
-  if (panelApi) panelApi.classList.add("hidden");
-}
+  const btnUrlRegister =
+    document.getElementById(
+      "btnUrlRegister"
+    );
 
-function showPanelByKey(key) {
-  hideAllPanels();
+  const btnApiRegister =
+    document.getElementById(
+      "btnApiRegister"
+    );
 
-  const p = sourceMap[key];
-  if (!p) {
-    if (panelEmpty) panelEmpty.classList.remove("hidden");
-    return;
-  }
+  /*
+   * 旧HTMLのボタンIDとの互換用。
+   */
+  const btnKokkaiRegister =
+    document.getElementById(
+      "btnKokkaiRegister"
+    );
 
-  if (key === "api_kokkai") {
-    if (panelKokkai) panelKokkai.classList.remove("hidden");
-    return;
-  }
+  const btnFetchDatasets =
+    document.getElementById(
+      "btnFetchDatasets"
+    );
 
-  if (key === "file_upload") {
-    if (panelUpload) panelUpload.classList.remove("hidden");
-    return;
-  }
+  let sourceMap = {};
+  let currentDataSource = null;
 
-  if (key === "api_datago") {
-    if (panelOpenData) panelOpenData.classList.remove("hidden");
-    return;
-  }
 
-  if (p.type === "public_url") {
-    if (panelUrl) panelUrl.classList.remove("hidden");
-    return;
-  }
-
-  if (p.type === "public_api") {
-    if (panelApi) panelApi.classList.remove("hidden");
-    return;
-  }
-
-  if (panelEmpty) panelEmpty.classList.remove("hidden");
-}
-
-function getIdToken() {
-  return sessionStorage.getItem("idToken");
-}
-
-function requireIdToken() {
-  const idToken = getIdToken();
-  if (!idToken) {
-    alert("idToken がありません。ログインからやり直してください。");
-    return null;
-  }
-  return idToken;
-}
-
-async function loadPublicUrlConfig(forceReload = false) {
-  if (!forceReload && publicUrlConfigCache) {
-    return publicUrlConfigCache;
-  }
-
-  const idToken = requireIdToken();
-  if (!idToken) {
-    throw new Error("idToken がありません");
-  }
-
-  const res = await fetch(`${API_BASE}/data-import/public-url/sources`, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${idToken}`
-    }
-  });
-
-  if (!res.ok) {
-    throw new Error(`公開URL設定の取得に失敗しました (HTTP ${res.status})`);
-  }
-
-  const config = await res.json();
-  publicUrlConfigCache = config;
-  return config;
-}
-
-function findPublicUrlSource(config, sourceKey) {
-  if (!config || !Array.isArray(config.sources)) return null;
-  return config.sources.find((item) => item.source_key === sourceKey) || null;
-}
-
-function resetPublicUrlArea() {
-  if (publicUrlTarget) {
-    if ("value" in publicUrlTarget) {
-      publicUrlTarget.value = "";
-    } else {
-      publicUrlTarget.textContent = "";
-    }
-
-    publicUrlTarget.readOnly = false;
-    publicUrlTarget.classList.remove("public-url-readonly");
-  }
-
-  if (window.DataImportUrl && typeof window.DataImportUrl.resetPages === "function") {
-    window.DataImportUrl.resetPages(publicUrlPageList);
-  }
-}
-
-async function applySelection(key) {
-  currentSourceKey = key || "";
-  const p = sourceMap[key];
-
-  if (!p) {
-    resetPublicUrlArea();
-    showPanelByKey("");
-    return;
-  }
-
-  if (p.type === "public_url") {
-    if (publicUrlTarget) {
-      if ("value" in publicUrlTarget) {
-        publicUrlTarget.value = "";
-      } else {
-        publicUrlTarget.textContent = "";
-      }
-
-      publicUrlTarget.readOnly = true;
-      publicUrlTarget.classList.add("public-url-readonly");
-    }
-
-    try {
-      const config = await loadPublicUrlConfig();
-      const source = findPublicUrlSource(config, key);
-
-      if (!source) {
-        if (publicUrlTarget) {
-          if ("value" in publicUrlTarget) {
-            publicUrlTarget.value = "定義未登録";
-          } else {
-            publicUrlTarget.textContent = "定義未登録";
-          }
-        }
-      } else {
-        const label = source.label ?? "";
-        const url = source.url ?? "";
-        const text = label && url ? `${label}\n${url}` : (label || url || "");
-
-        if (publicUrlTarget) {
-          if ("value" in publicUrlTarget) {
-            publicUrlTarget.value = text;
-          } else {
-            publicUrlTarget.textContent = text;
-          }
-        }
-      }
-    } catch (e) {
-      console.error(e);
-      if (publicUrlTarget) {
-        if ("value" in publicUrlTarget) {
-          publicUrlTarget.value = "取得設定 読込失敗";
-        } else {
-          publicUrlTarget.textContent = "取得設定 読込失敗";
-        }
-      }
-      alert(`公開URL設定読込失敗: ${e.message}`);
-    }
-  } else {
-    if (publicUrlTarget) {
-      if ("value" in publicUrlTarget) {
-        publicUrlTarget.value = "";
-      } else {
-        publicUrlTarget.textContent = "";
-      }
-
-      publicUrlTarget.readOnly = false;
-      publicUrlTarget.classList.remove("public-url-readonly");
-    }
-  }
-
-  if (window.DataImportUrl && typeof window.DataImportUrl.resetPages === "function") {
-    window.DataImportUrl.resetPages(publicUrlPageList);
-  }
-
-  if (key === "api_datago" && window.DataImportOpenData) {
-    window.DataImportOpenData.resetOpenDataArea();
-  }
-
-  showPanelByKey(key);
-}
-
-function bindToolbarEvents() {
-  document.addEventListener("toolbar:ready", (event) => {
-    const detail = event.detail || {};
-    sourceList = Array.isArray(detail.sourceList) ? detail.sourceList : [];
-    sourceMap = detail.sourceMap || {};
-
-    hideAllPanels();
-    resetPublicUrlArea();
-
-    if (panelEmpty) {
-      panelEmpty.classList.remove("hidden");
-    }
-  });
-
-  document.addEventListener("toolbar:source-change", async (event) => {
-    const detail = event.detail || {};
-    const sourceKey = detail.sourceKey || "";
-    await applySelection(sourceKey);
-  });
-}
-
-if (btnKokkaiRegister) {
-  btnKokkaiRegister.addEventListener("click", async () => {
-    const sourceSelect = getSourceSelect();
-    const p = sourceMap[sourceSelect?.value || currentSourceKey];
-    if (!p) {
-      alert("取得元が選択されていません");
+  function writeLog(message) {
+    if (!logText) {
       return;
     }
 
-    const idToken = requireIdToken();
-    if (!idToken) return;
+    const now =
+      new Date();
 
-    if (!window.DataImportKokkai || typeof window.DataImportKokkai.run !== "function") {
-      alert("data_import_kokkai.js が読み込まれていません");
-      return;
-    }
-
-    try {
-      await window.DataImportKokkai.run({
-        apiBase: API_BASE,
-        sourceKey: p.key,
-        idToken,
-        writeLog: writeLog
-      });
-    } catch (e) {
-      console.error(e);
-      writeLog(`処理失敗: ${e.message}`);
-      alert(`処理失敗: ${e.message}`);
-    }
-  });
-}
-
-if (btnUploadRegister) {
-  btnUploadRegister.addEventListener("click", async () => {
-    const idToken = requireIdToken();
-    if (!idToken) return;
-
-    if (!window.DataImportUpload || typeof window.DataImportUpload.run !== "function") {
-      alert("data_import_upload.js が読み込まれていません");
-      return;
-    }
-
-    try {
-      await window.DataImportUpload.run({
-        apiBase: API_BASE,
-        idToken,
-        writeLog: writeLog
-      });
-    } catch (e) {
-      console.error(e);
-      writeLog(`処理失敗: ${e.message}`);
-      alert(`処理失敗: ${e.message}`);
-    }
-  });
-}
-
-if (btnFetchDatasets) {
-  btnFetchDatasets.addEventListener("click", async () => {
-    const sourceSelect = getSourceSelect();
-    const p = sourceMap[sourceSelect?.value || currentSourceKey];
-    if (!p) {
-      alert("取得元が選択されていません");
-      return;
-    }
-
-    const idToken = requireIdToken();
-    if (!idToken) return;
-
-    if (!window.DataImportOpenData) {
-      alert("data_import_opendata.js が読み込まれていません");
-      return;
-    }
-
-    const loadDatasets = async (silent = false) => {
-      const data = await window.DataImportOpenData.fetchDatasets({
-        apiBase: API_BASE,
-        sourceKey: p.key,
-        idToken,
-        writeLog: writeLog,
-        silent
-      });
-
-      window.DataImportOpenData.renderDatasets(
-        data.datasets || [],
-        {
-          onExpandDataset: async (datasetId, _datasetTitle) => {
-            await window.DataImportOpenData.expandDataset({
-              apiBase: API_BASE,
-              sourceKey: p.key,
-              idToken,
-              datasetId,
-              writeLog: writeLog
-            });
-
-            await loadDatasets(true);
-          }
-        },
-        writeLog
+    const hh =
+      String(
+        now.getHours()
+      ).padStart(
+        2,
+        "0"
       );
+
+    const mm =
+      String(
+        now.getMinutes()
+      ).padStart(
+        2,
+        "0"
+      );
+
+    const ss =
+      String(
+        now.getSeconds()
+      ).padStart(
+        2,
+        "0"
+      );
+
+    logText.textContent +=
+      `[${hh}:${mm}:${ss}] ${String(message ?? "")}\n`;
+
+    logText.scrollTop =
+      logText.scrollHeight;
+  }
+
+
+  function clearLog() {
+    if (logText) {
+      logText.textContent = "";
+    }
+  }
+
+
+  function getIdToken() {
+    return (
+      sessionStorage.getItem(
+        "idToken"
+      ) ||
+      localStorage.getItem(
+        "idToken"
+      ) ||
+      ""
+    );
+  }
+
+
+  function requireIdToken() {
+    const idToken =
+      getIdToken();
+
+    if (!idToken) {
+      throw new Error(
+        "ログイン情報がありません。ログインからやり直してください。"
+      );
+    }
+
+    return idToken;
+  }
+
+
+  function normalizeSourceType(value) {
+    const sourceType =
+      String(
+        value || ""
+      )
+        .trim()
+        .toLowerCase()
+        .replace(
+          /-/g,
+          "_"
+        );
+
+    switch (sourceType) {
+      case "upload":
+        return "file";
+
+      case "public_url":
+        return "url";
+
+      case "public_api":
+        return "api";
+
+      case "email":
+        return "mail";
+
+      default:
+        return sourceType;
+    }
+  }
+
+
+  function normalizeAuthenticationMethodKey(
+    value
+  ) {
+    const methodKey =
+      String(
+        value || ""
+      )
+        .trim()
+        .toLowerCase()
+        .replace(
+          /-/g,
+          "_"
+        );
+
+    switch (methodKey) {
+      case "":
+      case "none":
+      case "no_auth":
+      case "no_authentication":
+        return "none";
+
+      case "credential":
+      case "credentials":
+        return "client_credentials";
+
+      default:
+        return methodKey;
+    }
+  }
+
+
+  function hideAllPanels() {
+    [
+      panelEmpty,
+      panelUpload,
+      panelUrl,
+      panelApi,
+      panelKokkai,
+      panelOpenData
+    ].forEach(
+      panel => {
+        panel?.classList.add(
+          "hidden"
+        );
+      }
+    );
+  }
+
+
+  function showEmptyPanel() {
+    hideAllPanels();
+
+    panelEmpty?.classList.remove(
+      "hidden"
+    );
+  }
+
+
+  function showPanelForDataSource(
+    dataSource
+  ) {
+    hideAllPanels();
+
+    if (!dataSource) {
+      panelEmpty?.classList.remove(
+        "hidden"
+      );
+      return;
+    }
+
+    const sourceType =
+      normalizeSourceType(
+        dataSource.source_type
+      );
+
+    if (sourceType === "file") {
+      panelUpload?.classList.remove(
+        "hidden"
+      );
+      return;
+    }
+
+    if (sourceType === "url") {
+      panelUrl?.classList.remove(
+        "hidden"
+      );
+      return;
+    }
+
+    if (
+      sourceType === "api" ||
+      sourceType === "mail"
+    ) {
+      /*
+       * 新HTMLではpanelApiを使用。
+       * 旧HTMLではpanelKokkaiまたはpanelOpenDataを代替表示。
+       */
+      const apiPanel =
+        panelApi ||
+        panelKokkai ||
+        panelOpenData;
+
+      apiPanel?.classList.remove(
+        "hidden"
+      );
+
+      return;
+    }
+
+    panelEmpty?.classList.remove(
+      "hidden"
+    );
+  }
+
+
+  function normalizeDataSource(
+    source
+  ) {
+    if (!source) {
+      return null;
+    }
+
+    return {
+      ...source,
+
+      data_source_id:
+        String(
+          source.data_source_id ||
+          source.sourceId ||
+          source.sourceKey ||
+          source.key ||
+          ""
+        ).trim(),
+
+      data_source_name:
+        String(
+          source.data_source_name ||
+          source.dataSourceName ||
+          source.sourceLabel ||
+          source.label ||
+          ""
+        ).trim(),
+
+      source_type:
+        normalizeSourceType(
+          source.source_type ||
+          source.sourceType ||
+          source.type
+        ),
+
+      authentication_method_key:
+        normalizeAuthenticationMethodKey(
+          source.authentication_method_key ||
+          source.authenticationMethodKey
+        )
     };
+  }
 
-    try {
-      await loadDatasets(false);
-    } catch (e) {
-      console.error(e);
-      writeLog(`処理失敗: ${e.message}`);
-      alert(`処理失敗: ${e.message}`);
+
+  async function loadDataSourceDetail(
+    dataSource
+  ) {
+    const normalized =
+      normalizeDataSource(
+        dataSource
+      );
+
+    if (
+      !normalized ||
+      !normalized.data_source_id
+    ) {
+      throw new Error(
+        "データソースが選択されていません。"
+      );
     }
-  });
-}
 
-if (btnUrlRegister) {
-  btnUrlRegister.addEventListener("click", async () => {
-    const sourceSelect = getSourceSelect();
-    const p = sourceMap[sourceSelect?.value || currentSourceKey];
-    if (!p) {
-      alert("取得元が選択されていません");
+    /*
+     * 一覧APIに認証方式が含まれていれば再取得しない。
+     * ファイルは認証方式を必要としない。
+     */
+    if (
+      normalized.source_type === "file" ||
+      normalized.authentication_method_key
+    ) {
+      return normalized;
+    }
+
+    const idToken =
+      requireIdToken();
+
+    const response =
+      await fetch(
+        `${API_BASE}/data-sources/${encodeURIComponent(normalized.data_source_id)}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization:
+              `Bearer ${idToken}`
+          }
+        }
+      );
+
+    const body =
+      await readResponseBody(
+        response
+      );
+
+    if (!response.ok) {
+      throw new Error(
+        body?.detail ||
+        body?.message ||
+        `データソース設定の取得に失敗しました。HTTP ${response.status}`
+      );
+    }
+
+    return normalizeDataSource(
+      body?.data_source ||
+      body
+    );
+  }
+
+
+  async function runSelectedDataImport() {
+    if (!currentDataSource) {
+      alert(
+        "データソースを選択してください。"
+      );
       return;
     }
 
-    const idToken = requireIdToken();
-    if (!idToken) return;
+    let dataSource;
 
-    if (!window.DataImportUrl || typeof window.DataImportUrl.run !== "function") {
-      alert("data_import_url.js が読み込まれていません");
+    try {
+      dataSource =
+        await loadDataSourceDetail(
+          currentDataSource
+        );
+
+      currentDataSource =
+        dataSource;
+
+      const idToken =
+        requireIdToken();
+
+      writeLog(
+        `データソース: ${dataSource.data_source_name}`
+      );
+
+      if (
+        dataSource.source_type === "file"
+      ) {
+        await runFileImport({
+          idToken,
+          dataSource
+        });
+
+        return;
+      }
+
+      const methodKey =
+        normalizeAuthenticationMethodKey(
+          dataSource.authentication_method_key
+        );
+
+      switch (methodKey) {
+        case "none":
+          await runNoneImport({
+            idToken,
+            dataSource
+          });
+          return;
+
+        case "basic":
+          await runBasicImport({
+            idToken,
+            dataSource
+          });
+          return;
+
+        case "client_credentials":
+          await runClientCredentialsImport({
+            idToken,
+            dataSource
+          });
+          return;
+
+        default:
+          throw new Error(
+            `未対応の認証方式です: ${methodKey || "未設定"}`
+          );
+      }
+
+    } catch (error) {
+      console.error(
+        error
+      );
+
+      writeLog(
+        `処理失敗: ${error.message}`
+      );
+
+      alert(
+        `処理失敗: ${error.message}`
+      );
+    }
+  }
+
+
+  async function runFileImport({
+    idToken,
+    dataSource
+  }) {
+    validateModule(
+      window.DataImportFile,
+      "data_import_file.js"
+    );
+
+    return await window.DataImportFile.run({
+      apiBase:
+        API_BASE,
+
+      idToken,
+
+      dataSource,
+
+      writeLog
+    });
+  }
+
+
+  async function runNoneImport({
+    idToken,
+    dataSource
+  }) {
+    validateModule(
+      window.DataImportNone,
+      "data_import_none.js"
+    );
+
+    return await window.DataImportNone.run({
+      apiBase:
+        API_BASE,
+
+      idToken,
+
+      dataSource,
+
+      writeLog
+    });
+  }
+
+
+  async function runBasicImport({
+    idToken,
+    dataSource
+  }) {
+    validateModule(
+      window.DataImportBasic,
+      "data_import_basic.js"
+    );
+
+    return await window.DataImportBasic.run({
+      apiBase:
+        API_BASE,
+
+      idToken,
+
+      dataSource,
+
+      writeLog
+    });
+  }
+
+
+  async function runClientCredentialsImport({
+    idToken,
+    dataSource
+  }) {
+    validateModule(
+      window.DataImportClientCredentials,
+      "data_import_client_credentials.js"
+    );
+
+    return await window.DataImportClientCredentials.run({
+      apiBase:
+        API_BASE,
+
+      idToken,
+
+      dataSource,
+
+      writeLog
+    });
+  }
+
+
+  function validateModule(
+    moduleObject,
+    fileName
+  ) {
+    if (
+      !moduleObject ||
+      typeof moduleObject.run !==
+        "function"
+    ) {
+      throw new Error(
+        `${fileName}が読み込まれていません。`
+      );
+    }
+  }
+
+
+  async function readResponseBody(
+    response
+  ) {
+    const contentType =
+      response.headers.get(
+        "content-type"
+      ) || "";
+
+    if (
+      contentType.includes(
+        "application/json"
+      )
+    ) {
+      return await response.json();
+    }
+
+    return {
+      message:
+        await response.text()
+    };
+  }
+
+
+  function bindToolbarEvents() {
+    document.addEventListener(
+      "toolbar:ready",
+      event => {
+        const detail =
+          event.detail || {};
+
+        sourceMap =
+          detail.sourceMap || {};
+
+        currentDataSource =
+          null;
+
+        showEmptyPanel();
+
+        if (detail.error) {
+          writeLog(
+            `データソース取得失敗: ${detail.error.message || detail.error}`
+          );
+        }
+      }
+    );
+
+    document.addEventListener(
+      "toolbar:source-change",
+      event => {
+        const detail =
+          event.detail || {};
+
+        const sourceId =
+          detail.dataSourceId ||
+          detail.sourceId ||
+          detail.sourceKey ||
+          "";
+
+        const source =
+          detail.dataSource ||
+          sourceMap[sourceId] ||
+          {
+            data_source_id:
+              sourceId,
+
+            data_source_name:
+              detail.dataSourceName ||
+              detail.sourceLabel ||
+              "",
+
+            source_type:
+              detail.sourceType ||
+              "",
+
+            authentication_method_key:
+              detail.authenticationMethodKey ||
+              ""
+          };
+
+        currentDataSource =
+          sourceId
+            ? normalizeDataSource(
+                source
+              )
+            : null;
+
+        showPanelForDataSource(
+          currentDataSource
+        );
+      }
+    );
+  }
+
+
+  function bindActionButton(
+    button
+  ) {
+    if (!button) {
       return;
     }
 
-    try {
-      await window.DataImportUrl.run({
-        apiBase: API_BASE,
-        sourceKey: p.key,
-        idToken,
-        writeLog: writeLog,
-        pagesContainer: publicUrlPageList
-      });
-    } catch (e) {
-      console.error(e);
-      writeLog(`処理失敗: ${e.message}`);
-      alert(`処理失敗: ${e.message}`);
-    }
-  });
-}
+    button.addEventListener(
+      "click",
+      async () => {
+        button.disabled =
+          true;
 
-document.addEventListener("DOMContentLoaded", () => {
-  hideAllPanels();
-  if (panelEmpty) panelEmpty.classList.remove("hidden");
-  resetPublicUrlArea();
-  bindToolbarEvents();
-});
+        try {
+          await runSelectedDataImport();
+
+        } finally {
+          button.disabled =
+            false;
+        }
+      }
+    );
+  }
+
+
+  function initialize() {
+    showEmptyPanel();
+    bindToolbarEvents();
+
+    bindActionButton(
+      btnUploadRegister
+    );
+
+    bindActionButton(
+      btnUrlRegister
+    );
+
+    bindActionButton(
+      btnApiRegister
+    );
+
+    /*
+     * 旧HTMLのボタンも同じ共通処理へ接続する。
+     */
+    bindActionButton(
+      btnKokkaiRegister
+    );
+
+    bindActionButton(
+      btnFetchDatasets
+    );
+
+    btnClearLog?.addEventListener(
+      "click",
+      clearLog
+    );
+  }
+
+
+  document.addEventListener(
+    "DOMContentLoaded",
+    initialize
+  );
+
+  window.DataImport = {
+    run:
+      runSelectedDataImport,
+
+    getCurrentDataSource:
+      () => (
+        currentDataSource
+          ? {
+              ...currentDataSource
+            }
+          : null
+      ),
+
+    writeLog,
+    clearLog
+  };
+})();
