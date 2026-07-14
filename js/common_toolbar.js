@@ -3,10 +3,10 @@
  *
  * 役割
  * - 共通ツールバー描画
- * - source_master.json を読んで sourceSelect を自動設定
- * - enableDbAutoLoad=true のときだけ sourceSelect 変更時に knowledge db 一覧を自動取得
+ * - /data-sources/available から利用可能なデータソースを取得
+ * - データソース選択変更をカスタムイベントで通知
+ * - enableDbAutoLoad=true の場合のみナレッジDB一覧を取得
  * - メニュー / ログアウトの共通動作
- * - sourceSelect / dbSelect の変更をカスタムイベントで通知
  *
  * 発火イベント:
  * - toolbar:ready
@@ -17,10 +17,10 @@
 (function () {
   "use strict";
 
-  const DEFAULT_SOURCE_JSON_PATH = "./source_master.json";
   const DEFAULT_MENU_URL = "./menu.html";
   const DEFAULT_LOGOUT_URL = "./index.html";
-  const DEFAULT_API_BASE = "https://ank-api-986862757498.asia-northeast1.run.app/v1";
+  const DEFAULT_API_BASE =
+    "https://ank-api-986862757498.asia-northeast1.run.app/v1";
 
   let toolbarState = {
     mountId: "",
@@ -28,509 +28,1056 @@
     showSourceSelect: false,
     showDbSelect: false,
     enableDbAutoLoad: false,
-    sourceJsonPath: DEFAULT_SOURCE_JSON_PATH,
     menuUrl: DEFAULT_MENU_URL,
     logoutUrl: DEFAULT_LOGOUT_URL,
     apiBase: DEFAULT_API_BASE,
     actions: [],
     sourceList: [],
     sourceMap: {},
-    currentSourceKey: "",
+    currentSourceId: "",
     currentSourceType: "",
     currentDbName: ""
   };
 
+
   async function renderPageToolbar(options) {
     const opts = normalizeOptions(options);
+
     toolbarState = {
       ...toolbarState,
-      ...opts
+      ...opts,
+      sourceList: [],
+      sourceMap: {},
+      currentSourceId: "",
+      currentSourceType: "",
+      currentDbName: ""
     };
 
-    const mount = document.getElementById(opts.mountId);
+    const mount =
+      document.getElementById(
+        opts.mountId
+      );
+
     if (!mount) {
-      console.error("renderPageToolbar: mount not found:", opts.mountId);
+      console.error(
+        "renderPageToolbar: mount not found:",
+        opts.mountId
+      );
       return;
     }
 
-    mount.innerHTML = buildToolbarHtml(opts);
+    mount.innerHTML =
+      buildToolbarHtml(
+        opts
+      );
 
-    bindCommonActions(opts);
+    bindCommonActions(
+      opts
+    );
 
-    if (opts.showSourceSelect) {
-      try {
-        const sourceList = await loadSourceMaster(opts.sourceJsonPath);
-        toolbarState.sourceList = sourceList;
-        toolbarState.sourceMap = buildSourceMap(sourceList);
-
-        fillSourceSelect(sourceList, {
-          selectId: "sourceSelect",
-          placeholder: opts.sourcePlaceholder
-        });
-
-        if (opts.showDbSelect) {
-          resetDbSelect("データ種別を選択してください");
-        }
-
-        dispatchToolbarReady();
-      } catch (err) {
-        console.error("source master load failed:", err);
-        fillSourceSelectError("sourceSelect", "取得失敗");
-
-        if (opts.showDbSelect) {
-          resetDbSelect("取得失敗");
-        }
-
-        dispatchToolbarReady(err);
-      }
-    } else {
+    if (!opts.showSourceSelect) {
       dispatchToolbarReady();
+      return;
+    }
+
+    try {
+      const sourceList =
+        await loadAvailableDataSources();
+
+      toolbarState.sourceList =
+        sourceList;
+
+      toolbarState.sourceMap =
+        buildSourceMap(
+          sourceList
+        );
+
+      fillSourceSelect(
+        sourceList,
+        {
+          selectId: "sourceSelect",
+          placeholder:
+            opts.sourcePlaceholder
+        }
+      );
+
+      if (opts.showDbSelect) {
+        resetDbSelect(
+          "データソースを選択してください"
+        );
+      }
+
+      dispatchToolbarReady();
+
+    } catch (error) {
+      console.error(
+        "data sources load failed:",
+        error
+      );
+
+      fillSourceSelectError(
+        "sourceSelect",
+        "取得失敗"
+      );
+
+      if (opts.showDbSelect) {
+        resetDbSelect(
+          "取得失敗"
+        );
+      }
+
+      dispatchToolbarReady(
+        error
+      );
     }
   }
 
+
   function normalizeOptions(options) {
-    const src = options || {};
+    const src =
+      options || {};
+
     return {
-      mountId: src.mountId || "",
-      title: src.title || "",
-      showSourceSelect: Boolean(src.showSourceSelect),
-      showDbSelect: Boolean(src.showDbSelect),
-      enableDbAutoLoad: Boolean(src.enableDbAutoLoad),
-      sourceJsonPath: src.sourceJsonPath || DEFAULT_SOURCE_JSON_PATH,
-      sourcePlaceholder: src.sourcePlaceholder || "選択してください",
-      menuUrl: src.menuUrl || DEFAULT_MENU_URL,
-      logoutUrl: src.logoutUrl || DEFAULT_LOGOUT_URL,
-      apiBase: src.apiBase || DEFAULT_API_BASE,
-      actions: Array.isArray(src.actions) ? src.actions : []
+      mountId:
+        src.mountId || "",
+
+      title:
+        src.title || "",
+
+      showSourceSelect:
+        Boolean(
+          src.showSourceSelect
+        ),
+
+      showDbSelect:
+        Boolean(
+          src.showDbSelect
+        ),
+
+      enableDbAutoLoad:
+        Boolean(
+          src.enableDbAutoLoad
+        ),
+
+      sourcePlaceholder:
+        src.sourcePlaceholder ||
+        "データソースを選択してください",
+
+      menuUrl:
+        src.menuUrl ||
+        DEFAULT_MENU_URL,
+
+      logoutUrl:
+        src.logoutUrl ||
+        DEFAULT_LOGOUT_URL,
+
+      apiBase:
+        src.apiBase ||
+        DEFAULT_API_BASE,
+
+      actions:
+        Array.isArray(
+          src.actions
+        )
+          ? src.actions
+          : []
     };
   }
 
+
   function buildToolbarHtml(opts) {
-    const mainClasses = ["page-toolbar-main"];
-    if (opts.showSourceSelect) mainClasses.push("has-source");
-    if (opts.showDbSelect) mainClasses.push("has-db");
+    const mainClasses = [
+      "page-toolbar-main"
+    ];
+
+    if (opts.showSourceSelect) {
+      mainClasses.push(
+        "has-source"
+      );
+    }
+
+    if (opts.showDbSelect) {
+      mainClasses.push(
+        "has-db"
+      );
+    }
 
     return `
       <div class="page-toolbar">
+
         <div class="page-toolbar-title">
           ${escapeHtml(opts.title)}
         </div>
 
         <div class="${mainClasses.join(" ")}">
-          ${opts.showSourceSelect ? `
-            <div class="toolbar-field">
-              <!-- <label for="sourceSelect">データ種別</label> -->
-              <select id="sourceSelect" class="toolbar-select"></select>
-            </div>
-          ` : ""}
 
-          ${opts.showDbSelect ? `
-            <div class="toolbar-field">
-              <!-- <label for="dbSelect">ナレッジDB</label> -->
-              <select id="dbSelect" class="toolbar-select" disabled>
-                <option value="">選択してください</option>
-              </select>
-            </div>
-          ` : ""}
+          ${
+            opts.showSourceSelect
+              ? `
+                <div class="toolbar-field">
+                  <select
+                    id="sourceSelect"
+                    class="toolbar-select"
+                    disabled
+                  >
+                    <option value="">
+                      読込中です...
+                    </option>
+                  </select>
+                </div>
+              `
+              : ""
+          }
+
+          ${
+            opts.showDbSelect
+              ? `
+                <div class="toolbar-field">
+                  <select
+                    id="dbSelect"
+                    class="toolbar-select"
+                    disabled
+                  >
+                    <option value="">
+                      データソースを選択してください
+                    </option>
+                  </select>
+                </div>
+              `
+              : ""
+          }
+
         </div>
 
         <div class="page-toolbar-actions">
-          ${opts.actions.map((action) => `
-            <button
-              id="${escapeHtml(action.id)}"
-              class="btn"
-              type="button"
-            >
-              ${escapeHtml(action.label)}
-            </button>
-          `).join("")}
+          ${
+            opts.actions
+              .map(
+                action => `
+                  <button
+                    id="${escapeHtml(action.id)}"
+                    class="btn"
+                    type="button"
+                  >
+                    ${escapeHtml(action.label)}
+                  </button>
+                `
+              )
+              .join("")
+          }
         </div>
+
       </div>
     `;
   }
 
+
   function bindCommonActions(opts) {
-    const btnMenu = document.getElementById("btnMenu");
-    const btnLogout = document.getElementById("btnLogout");
-    const sourceSelect = document.getElementById("sourceSelect");
-    const dbSelect = document.getElementById("dbSelect");
+    const btnMenu =
+      document.getElementById(
+        "btnMenu"
+      );
+
+    const btnLogout =
+      document.getElementById(
+        "btnLogout"
+      );
+
+    const sourceSelect =
+      document.getElementById(
+        "sourceSelect"
+      );
+
+    const dbSelect =
+      document.getElementById(
+        "dbSelect"
+      );
 
     if (btnMenu) {
-      btnMenu.addEventListener("click", () => {
-        window.location.href = opts.menuUrl;
-      });
+      btnMenu.addEventListener(
+        "click",
+        () => {
+          window.location.href =
+            opts.menuUrl;
+        }
+      );
     }
 
     if (btnLogout) {
-      btnLogout.addEventListener("click", async () => {
-        try {
-          sessionStorage.removeItem("idToken");
-          localStorage.removeItem("idToken");
-
-          if (
-            window.firebase &&
-            typeof window.firebase.auth === "function" &&
-            window.firebase.auth().currentUser
-          ) {
-            try {
-              await window.firebase.auth().signOut();
-            } catch (signOutErr) {
-              console.warn("firebase signOut failed:", signOutErr);
-            }
-          }
-        } finally {
-          window.location.href = opts.logoutUrl;
-        }
-      });
+      btnLogout.addEventListener(
+        "click",
+        handleLogout
+      );
     }
 
     if (sourceSelect) {
-      sourceSelect.addEventListener("change", async () => {
-        const selectedKey = sourceSelect.value || "";
-        const source = toolbarState.sourceMap[selectedKey] || null;
-        const sourceType = normalizeSourceType(selectedKey, source?.type || "");
-
-        toolbarState.currentSourceKey = selectedKey;
-        toolbarState.currentSourceType = sourceType;
-        toolbarState.currentDbName = "";
-
-        dispatchSourceChange({
-          sourceKey: selectedKey,
-          sourceLabel: source?.label || "",
-          sourceGroup: source?.group || "",
-          sourceType
-        });
-
-        if (!dbSelect || !toolbarState.enableDbAutoLoad) {
-          return;
+      sourceSelect.addEventListener(
+        "change",
+        async () => {
+          await handleSourceChange(
+            sourceSelect,
+            dbSelect
+          );
         }
-
-        try {
-          if (!sourceType) {
-            resetDbSelect("データ種別を選択してください");
-            dispatchDbChange({
-              dbName: "",
-              sourceKey: selectedKey,
-              sourceType
-            });
-            return;
-          }
-
-          resetDbSelect("読込中です...");
-          const dbItems = await loadKnowledgeDbs(sourceType);
-          fillDbSelect(dbItems, "選択してください");
-        } catch (err) {
-          console.error("knowledge db load failed:", err);
-          resetDbSelect("取得失敗");
-        }
-
-        dispatchDbChange({
-          dbName: "",
-          sourceKey: selectedKey,
-          sourceType
-        });
-      });
+      );
     }
 
     if (dbSelect) {
-      dbSelect.addEventListener("change", () => {
-        toolbarState.currentDbName = dbSelect.value || "";
+      dbSelect.addEventListener(
+        "change",
+        () => {
+          toolbarState.currentDbName =
+            dbSelect.value || "";
 
-        dispatchDbChange({
-          dbName: toolbarState.currentDbName,
-          sourceKey: toolbarState.currentSourceKey,
-          sourceType: toolbarState.currentSourceType
-        });
-      });
-    }
-  }
+          dispatchDbChange({
+            dbName:
+              toolbarState.currentDbName,
 
-  async function loadSourceMaster(jsonPath) {
-    const res = await fetch(jsonPath, {
-      cache: "no-store"
-    });
+            sourceId:
+              toolbarState.currentSourceId,
 
-    if (!res.ok) {
-      throw new Error(`source_master.json load failed: ${res.status}`);
-    }
+            sourceKey:
+              toolbarState.currentSourceId,
 
-    const data = await res.json();
-    if (!Array.isArray(data)) {
-      throw new Error("source_master.json format error");
-    }
-
-    return data
-      .filter((row) => row && row.key && row.label)
-      .map((row) => ({
-        key: String(row.key),
-        label: String(row.label),
-        group: String(row.group || ""),
-        type: String(row.type || "")
-      }));
-  }
-
-  async function loadKnowledgeDbs(sourceType) {
-    const token = await requireIdToken(false);
-    const url = new URL(`${toolbarState.apiBase}/knowledge/dbs`);
-    url.searchParams.set("source_type", sourceType);
-
-    let res = await fetch(url.toString(), {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
-
-    if (res.status === 401) {
-      const refreshedToken = await requireIdToken(true);
-      res = await fetch(url.toString(), {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${refreshedToken}`
+            sourceType:
+              toolbarState.currentSourceType
+          });
         }
+      );
+    }
+  }
+
+
+  async function handleSourceChange(
+    sourceSelect,
+    dbSelect
+  ) {
+    const selectedId =
+      sourceSelect.value || "";
+
+    const source =
+      toolbarState.sourceMap[
+        selectedId
+      ] || null;
+
+    const sourceType =
+      String(
+        source?.source_type || ""
+      ).trim();
+
+    toolbarState.currentSourceId =
+      selectedId;
+
+    toolbarState.currentSourceType =
+      sourceType;
+
+    toolbarState.currentDbName =
+      "";
+
+    dispatchSourceChange({
+      sourceId:
+        selectedId,
+
+      sourceKey:
+        selectedId,
+
+      dataSourceId:
+        selectedId,
+
+      sourceLabel:
+        source?.data_source_name || "",
+
+      dataSourceName:
+        source?.data_source_name || "",
+
+      sourceType:
+        sourceType,
+
+      dataSource:
+        source
+    });
+
+    if (
+      !dbSelect ||
+      !toolbarState.enableDbAutoLoad
+    ) {
+      return;
+    }
+
+    if (!selectedId) {
+      resetDbSelect(
+        "データソースを選択してください"
+      );
+
+      dispatchDbChange({
+        dbName: "",
+        sourceId: "",
+        sourceKey: "",
+        sourceType: ""
       });
+
+      return;
     }
 
-    if (!res.ok) {
-      throw new Error(await readErrorDetail(res));
+    try {
+      resetDbSelect(
+        "読込中です..."
+      );
+
+      const dbItems =
+        await loadKnowledgeDbs(
+          selectedId,
+          sourceType
+        );
+
+      fillDbSelect(
+        dbItems,
+        "選択してください"
+      );
+
+    } catch (error) {
+      console.error(
+        "knowledge db load failed:",
+        error
+      );
+
+      resetDbSelect(
+        "取得失敗"
+      );
     }
 
-    const data = await res.json();
-    const items = Array.isArray(data?.items) ? data.items : [];
+    dispatchDbChange({
+      dbName: "",
+      sourceId:
+        selectedId,
+      sourceKey:
+        selectedId,
+      sourceType:
+        sourceType
+    });
+  }
+
+
+  async function loadAvailableDataSources() {
+    const data =
+      await authenticatedJson(
+        `${toolbarState.apiBase}/data-sources/available`,
+        {
+          method: "GET"
+        }
+      );
+
+    const items =
+      Array.isArray(
+        data?.data_sources
+      )
+        ? data.data_sources
+        : [];
 
     return items
-      .map((item) => ({
-        dbName: String(item?.database_name || item?.db_name || "").trim()
-      }))
-      .filter((item) => item.dbName);
+      .filter(
+        item =>
+          item &&
+          item.data_source_id &&
+          item.data_source_name &&
+          item.enabled !== false
+      )
+      .map(
+        item => ({
+          data_source_id:
+            String(
+              item.data_source_id
+            ),
+
+          data_source_name:
+            String(
+              item.data_source_name
+            ),
+
+          source_type:
+            normalizeSourceType(
+              item.source_type
+            )
+        })
+      )
+      .sort(
+        (a, b) =>
+          a.data_source_name.localeCompare(
+            b.data_source_name,
+            "ja"
+          )
+      );
   }
+
+
+  async function loadKnowledgeDbs(
+    dataSourceId,
+    sourceType
+  ) {
+    const url =
+      new URL(
+        `${toolbarState.apiBase}/knowledge/dbs`
+      );
+
+    url.searchParams.set(
+      "data_source_id",
+      dataSourceId
+    );
+
+    if (sourceType) {
+      url.searchParams.set(
+        "source_type",
+        sourceType
+      );
+    }
+
+    const data =
+      await authenticatedJson(
+        url.toString(),
+        {
+          method: "GET"
+        }
+      );
+
+    const items =
+      Array.isArray(
+        data?.items
+      )
+        ? data.items
+        : [];
+
+    return items
+      .map(
+        item => ({
+          dbName:
+            String(
+              item?.database_name ||
+              item?.db_name ||
+              ""
+            ).trim()
+        })
+      )
+      .filter(
+        item =>
+          item.dbName
+      );
+  }
+
+
+  async function authenticatedJson(
+    url,
+    options = {}
+  ) {
+    const requestOptions = {
+      ...options,
+      headers: {
+        ...(options.headers || {})
+      }
+    };
+
+    let token =
+      await requireIdToken(
+        false
+      );
+
+    requestOptions.headers.Authorization =
+      `Bearer ${token}`;
+
+    let response =
+      await fetch(
+        url,
+        requestOptions
+      );
+
+    if (response.status === 401) {
+      token =
+        await requireIdToken(
+          true
+        );
+
+      requestOptions.headers.Authorization =
+        `Bearer ${token}`;
+
+      response =
+        await fetch(
+          url,
+          requestOptions
+        );
+    }
+
+    if (!response.ok) {
+      throw new Error(
+        await readErrorDetail(
+          response
+        )
+      );
+    }
+
+    if (response.status === 204) {
+      return {};
+    }
+
+    return await response.json();
+  }
+
 
   function buildSourceMap(sourceList) {
     const map = {};
-    sourceList.forEach((row) => {
-      map[row.key] = row;
-    });
+
+    sourceList.forEach(
+      source => {
+        map[
+          source.data_source_id
+        ] = source;
+      }
+    );
+
     return map;
   }
 
-  function fillSourceSelect(sourceList, options) {
-    const select = document.getElementById(options.selectId);
-    if (!select) return;
 
-    const placeholder = options.placeholder || "選択してください";
-    const grouped = groupBy(sourceList, "group");
+  function fillSourceSelect(
+    sourceList,
+    options
+  ) {
+    const select =
+      document.getElementById(
+        options.selectId
+      );
 
-    let html = `<option value="">${escapeHtml(placeholder)}</option>`;
+    if (!select) {
+      return;
+    }
 
-    Object.keys(grouped).forEach((groupName) => {
-      const rows = grouped[groupName];
-      if (groupName) {
-        html += `<optgroup label="${escapeHtml(groupName)}">`;
-      }
+    const placeholder =
+      options.placeholder ||
+      "データソースを選択してください";
 
-      rows.forEach((row) => {
+    let html =
+      `<option value="">${escapeHtml(placeholder)}</option>`;
+
+    sourceList.forEach(
+      source => {
         html += `
           <option
-            value="${escapeHtml(row.key)}"
-            data-source-type="${escapeHtml(row.type)}"
-            data-source-group="${escapeHtml(row.group)}"
+            value="${escapeHtml(source.data_source_id)}"
+            data-source-type="${escapeHtml(source.source_type)}"
           >
-            ${escapeHtml(row.label)}
+            ${escapeHtml(source.data_source_name)}
           </option>
         `;
-      });
-
-      if (groupName) {
-        html += `</optgroup>`;
       }
-    });
+    );
 
-    select.innerHTML = html;
-    select.disabled = false;
+    select.innerHTML =
+      html;
+
+    select.disabled =
+      false;
   }
 
-  function fillDbSelect(dbItems, placeholder) {
-    const select = document.getElementById("dbSelect");
-    if (!select) return;
 
-    let html = `<option value="">${escapeHtml(placeholder || "選択してください")}</option>`;
+  function fillSourceSelectError(
+    selectId,
+    message
+  ) {
+    const select =
+      document.getElementById(
+        selectId
+      );
 
-    dbItems.forEach((item) => {
-      html += `<option value="${escapeHtml(item.dbName)}">${escapeHtml(item.dbName)}</option>`;
-    });
+    if (!select) {
+      return;
+    }
 
-    select.innerHTML = html;
-    select.disabled = false;
+    select.innerHTML =
+      `<option value="">${escapeHtml(message || "取得失敗")}</option>`;
 
-    if (dbItems.length === 0) {
-      resetDbSelect("該当するナレッジDBがありません");
+    select.disabled =
+      true;
+  }
+
+
+  function fillDbSelect(
+    dbItems,
+    placeholder
+  ) {
+    const select =
+      document.getElementById(
+        "dbSelect"
+      );
+
+    if (!select) {
+      return;
+    }
+
+    if (
+      !Array.isArray(dbItems) ||
+      dbItems.length === 0
+    ) {
+      resetDbSelect(
+        "該当するナレッジDBがありません"
+      );
+      return;
+    }
+
+    let html =
+      `<option value="">${escapeHtml(placeholder || "選択してください")}</option>`;
+
+    dbItems.forEach(
+      item => {
+        html += `
+          <option value="${escapeHtml(item.dbName)}">
+            ${escapeHtml(item.dbName)}
+          </option>
+        `;
+      }
+    );
+
+    select.innerHTML =
+      html;
+
+    select.disabled =
+      false;
+  }
+
+
+  function resetDbSelect(message) {
+    const select =
+      document.getElementById(
+        "dbSelect"
+      );
+
+    if (!select) {
+      return;
+    }
+
+    select.innerHTML =
+      `<option value="">${escapeHtml(message || "選択してください")}</option>`;
+
+    select.disabled =
+      true;
+  }
+
+
+  function normalizeSourceType(value) {
+    const sourceType =
+      String(
+        value || ""
+      )
+        .trim()
+        .toLowerCase()
+        .replace(
+          /-/g,
+          "_"
+        );
+
+    switch (sourceType) {
+      case "file":
+      case "upload":
+        return "file";
+
+      case "mail":
+      case "email":
+        return "mail";
+
+      case "url":
+      case "public_url":
+        return "url";
+
+      case "api":
+      case "public_api":
+        return "api";
+
+      default:
+        return sourceType;
     }
   }
 
-  function resetDbSelect(message) {
-    const select = document.getElementById("dbSelect");
-    if (!select) return;
-
-    select.innerHTML = `<option value="">${escapeHtml(message || "選択してください")}</option>`;
-    select.disabled = true;
-  }
-
-  function fillSourceSelectError(selectId, message) {
-    const select = document.getElementById(selectId);
-    if (!select) return;
-
-    select.innerHTML = `<option value="">${escapeHtml(message || "取得失敗")}</option>`;
-    select.disabled = true;
-  }
-
-  function groupBy(list, keyName) {
-    const result = {};
-    list.forEach((row) => {
-      const key = row[keyName] || "";
-      if (!result[key]) {
-        result[key] = [];
-      }
-      result[key].push(row);
-    });
-    return result;
-  }
-
-  function normalizeSourceType(key, type) {
-    const keyText = String(key || "").trim();
-    const typeText = String(type || "").trim();
-
-    if (typeText === "upload") return "upload";
-    if (typeText === "public_url") return "public_url";
-
-    if (keyText === "api_kokkai") return "kokkai";
-    if (keyText === "api_datago") return "opendata";
-
-    if (keyText.startsWith("url_") || keyText.startsWith("url")) return "public_url";
-    if (keyText === "file_upload") return "upload";
-
-    return "";
-  }
 
   function getFirebaseAuth() {
     try {
-      if (window.firebase && typeof window.firebase.auth === "function") {
+      if (
+        window.firebase &&
+        typeof window.firebase.auth ===
+          "function"
+      ) {
         return window.firebase.auth();
       }
-    } catch (_) {}
+    } catch (_) {
+    }
+
     return null;
   }
 
-  async function getIdToken(forceRefresh = false) {
-    const auth = getFirebaseAuth();
 
-    if (auth && auth.currentUser) {
-      const token = await auth.currentUser.getIdToken(forceRefresh);
+  async function getIdToken(
+    forceRefresh = false
+  ) {
+    const auth =
+      getFirebaseAuth();
+
+    if (
+      auth &&
+      auth.currentUser
+    ) {
+      const token =
+        await auth.currentUser.getIdToken(
+          forceRefresh
+        );
+
       if (token) {
-        sessionStorage.setItem("idToken", token);
+        sessionStorage.setItem(
+          "idToken",
+          token
+        );
+
         return token;
       }
     }
 
-    const cached = sessionStorage.getItem("idToken");
-    if (cached) {
-      return cached;
+    const cachedToken =
+      sessionStorage.getItem(
+        "idToken"
+      );
+
+    if (cachedToken) {
+      return cachedToken;
     }
 
-    throw new Error("ログイン情報が見つかりません");
+    throw new Error(
+      "ログイン情報が見つかりません"
+    );
   }
 
-  async function requireIdToken(forceRefresh = false) {
-    const idToken = await getIdToken(forceRefresh);
+
+  async function requireIdToken(
+    forceRefresh = false
+  ) {
+    const idToken =
+      await getIdToken(
+        forceRefresh
+      );
+
     if (!idToken) {
-      throw new Error("ログイン情報が見つかりません");
+      throw new Error(
+        "ログイン情報が見つかりません"
+      );
     }
+
     return idToken;
   }
 
-  async function readErrorDetail(res) {
-    let detail = `APIエラー (HTTP ${res.status})`;
 
+  async function handleLogout() {
     try {
-      const contentType = res.headers.get("content-type") || "";
+      sessionStorage.removeItem(
+        "idToken"
+      );
 
-      if (contentType.includes("application/json")) {
-        const data = await res.json();
-        if (data && data.detail) {
-          detail = data.detail;
-        }
-      } else {
-        const text = await res.text();
-        if (text) {
-          detail = text;
+      localStorage.removeItem(
+        "idToken"
+      );
+
+      const auth =
+        getFirebaseAuth();
+
+      if (
+        auth &&
+        auth.currentUser
+      ) {
+        try {
+          await auth.signOut();
+        } catch (error) {
+          console.warn(
+            "firebase signOut failed:",
+            error
+          );
         }
       }
-    } catch (_) {}
+
+    } finally {
+      window.location.href =
+        toolbarState.logoutUrl;
+    }
+  }
+
+
+  async function readErrorDetail(
+    response
+  ) {
+    let detail =
+      `APIエラー (HTTP ${response.status})`;
+
+    try {
+      const contentType =
+        response.headers.get(
+          "content-type"
+        ) || "";
+
+      if (
+        contentType.includes(
+          "application/json"
+        )
+      ) {
+        const data =
+          await response.json();
+
+        if (data?.detail) {
+          detail =
+            String(
+              data.detail
+            );
+        }
+
+      } else {
+        const text =
+          await response.text();
+
+        if (text) {
+          detail =
+            text;
+        }
+      }
+
+    } catch (_) {
+    }
 
     return detail;
   }
 
+
   function dispatchToolbarReady(error) {
     document.dispatchEvent(
-      new CustomEvent("toolbar:ready", {
-        detail: {
-          sourceList: toolbarState.sourceList,
-          sourceMap: toolbarState.sourceMap,
-          error: error || null
+      new CustomEvent(
+        "toolbar:ready",
+        {
+          detail: {
+            sourceList:
+              toolbarState.sourceList.slice(),
+
+            sourceMap: {
+              ...toolbarState.sourceMap
+            },
+
+            error:
+              error || null
+          }
         }
-      })
+      )
     );
   }
+
 
   function dispatchSourceChange(detail) {
     document.dispatchEvent(
-      new CustomEvent("toolbar:source-change", {
-        detail
-      })
+      new CustomEvent(
+        "toolbar:source-change",
+        {
+          detail
+        }
+      )
     );
   }
+
 
   function dispatchDbChange(detail) {
     document.dispatchEvent(
-      new CustomEvent("toolbar:db-change", {
-        detail
-      })
+      new CustomEvent(
+        "toolbar:db-change",
+        {
+          detail
+        }
+      )
     );
   }
 
-  function escapeHtml(str) {
-    return String(str || "")
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#39;");
+
+  function escapeHtml(value) {
+    return String(
+      value ?? ""
+    )
+      .replace(
+        /&/g,
+        "&amp;"
+      )
+      .replace(
+        /</g,
+        "&lt;"
+      )
+      .replace(
+        />/g,
+        "&gt;"
+      )
+      .replace(
+        /"/g,
+        "&quot;"
+      )
+      .replace(
+        /'/g,
+        "&#39;"
+      );
   }
+
 
   function getToolbarSourceList() {
     return toolbarState.sourceList.slice();
   }
 
+
   function getToolbarSourceMap() {
-    return { ...toolbarState.sourceMap };
+    return {
+      ...toolbarState.sourceMap
+    };
   }
+
 
   function getSelectedSource() {
-    const select = document.getElementById("sourceSelect");
-    if (!select) return null;
+    const select =
+      document.getElementById(
+        "sourceSelect"
+      );
 
-    const key = select.value || "";
-    return toolbarState.sourceMap[key] || null;
+    if (!select) {
+      return null;
+    }
+
+    const sourceId =
+      select.value || "";
+
+    return toolbarState.sourceMap[
+      sourceId
+    ] || null;
   }
 
+
   function getSelectedDbName() {
-    const select = document.getElementById("dbSelect");
-    if (!select) return "";
+    const select =
+      document.getElementById(
+        "dbSelect"
+      );
+
+    if (!select) {
+      return "";
+    }
+
     return select.value || "";
   }
 
-  window.renderPageToolbar = renderPageToolbar;
-  window.getToolbarSourceList = getToolbarSourceList;
-  window.getToolbarSourceMap = getToolbarSourceMap;
-  window.getSelectedSource = getSelectedSource;
-  window.getSelectedDbName = getSelectedDbName;
+
+  window.renderPageToolbar =
+    renderPageToolbar;
+
+  window.getToolbarSourceList =
+    getToolbarSourceList;
+
+  window.getToolbarSourceMap =
+    getToolbarSourceMap;
+
+  window.getSelectedSource =
+    getSelectedSource;
+
+  window.getSelectedDbName =
+    getSelectedDbName;
+
 })();
