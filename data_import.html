@@ -6,6 +6,7 @@
 
   <link rel="stylesheet" href="./css/theme.css">
   <link rel="stylesheet" href="./css/data_import.css">
+  <link rel="stylesheet" href="./css/data_import_files.css">
 </head>
 
 <body>
@@ -76,6 +77,43 @@
               </div>
 
             </div>
+
+            <div class="uploaded-file-section">
+
+              <h3 class="uploaded-file-title">
+                アップロード済みファイル
+              </h3>
+
+              <div class="uploaded-file-header">
+                <div class="uploaded-file-name">
+                  ファイル名
+                </div>
+
+                <div class="uploaded-file-extension">
+                  拡張子
+                </div>
+
+                <div class="uploaded-file-size">
+                  サイズ
+                </div>
+
+                <div class="uploaded-file-date">
+                  登録・更新日時
+                </div>
+
+                <div class="uploaded-file-status">
+                  状態
+                </div>
+              </div>
+
+              <div id="uploadedFileList">
+                <div class="uploaded-file-message">
+                  読み込み中...
+                </div>
+              </div>
+
+            </div>
+
           </div>
 
           <div id="panelUrl" class="hidden">
@@ -148,7 +186,6 @@
   type="module"
   src="./js/data_import.js"
 ></script>
-
 
 </body>
 </html>
