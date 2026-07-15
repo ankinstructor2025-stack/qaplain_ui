@@ -1,0 +1,53 @@
+.api-import-result {
+  margin-top: 18px;
+  border: 1px solid #c9d1dd;
+  background: #ffffff;
+  color: #111827;
+}
+
+.api-import-result-title {
+  margin: 0;
+  padding: 10px 12px;
+  font-size: 16px;
+  background: #dbe3ee;
+  border-bottom: 1px solid #c9d1dd;
+}
+
+.api-import-result-summary {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border-bottom: 1px solid #d8dee8;
+}
+
+.api-import-result-summary > div {
+  display: grid;
+  grid-template-columns: 90px minmax(0, 1fr);
+  gap: 12px;
+}
+
+.api-import-result-label {
+  font-weight: 700;
+}
+
+.api-import-result-preview {
+  box-sizing: border-box;
+  width: 100%;
+  max-height: 420px;
+  margin: 0;
+  padding: 14px;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-family:
+    Consolas,
+    "Courier New",
+    monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  background: #f8fafc;
+}
+
+.api-import-result-preview.is-empty {
+  color: #6b7280;
+}
