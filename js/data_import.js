@@ -890,6 +890,97 @@ function escapeHtml(
 
 
 
+function showApiImportMessage(
+  message
+) {
+  clearApiImportResult();
+
+  if (!apiImportResult) {
+    return;
+  }
+
+  if (apiResultPreview) {
+    apiResultPreview.textContent =
+      String(
+        message || ""
+      );
+
+    apiResultPreview.classList.add(
+      "is-empty"
+    );
+  }
+
+  apiImportResult.classList.remove(
+    "hidden"
+  );
+}
+
+
+async function loadImportedItems(
+  dataSourceId
+) {
+  if (!dataSourceId) {
+    showApiImportMessage(
+      "データソースを選択してください。"
+    );
+
+    return;
+  }
+
+  showApiImportMessage(
+    "登録済みデータを読み込み中..."
+  );
+
+  try {
+    const url =
+      new URL(
+        `${API_BASE}/data-import/items`
+      );
+
+    url.searchParams.set(
+      "data_source_id",
+      dataSourceId
+    );
+
+    const result =
+      await authenticatedJsonOrThrow(
+        url.toString(),
+        {
+          method:
+            "GET"
+        }
+      );
+
+    const item =
+      result?.latest_item ||
+      null;
+
+    if (!item) {
+      showApiImportMessage(
+        "登録済みデータはありません。"
+      );
+
+      return;
+    }
+
+    renderApiImportResult(
+      item
+    );
+
+  } catch (error) {
+    console.error(
+      "登録済みデータ取得エラー:",
+      error
+    );
+
+    showApiImportMessage(
+      error.message ||
+      "登録済みデータを取得できませんでした。"
+    );
+  }
+}
+
+
 function clearApiImportResult() {
   apiImportResult?.classList.add(
     "hidden"
@@ -1311,6 +1402,18 @@ function bindToolbarEvents() {
           );
 
           await loadUploadedFiles(
+            currentDataSource.data_source_id
+          );
+
+        } else if (
+          currentDataSource.source_type ===
+            "api" ||
+          currentDataSource.source_type ===
+            "url" ||
+          currentDataSource.source_type ===
+            "mail"
+        ) {
+          await loadImportedItems(
             currentDataSource.data_source_id
           );
         }
