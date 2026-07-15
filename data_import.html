@@ -6,7 +6,8 @@
 
   <link rel="stylesheet" href="./css/theme.css">
   <link rel="stylesheet" href="./css/data_import.css">
-  <link rel="stylesheet" href="./css/data_import_files.css">
+  <link rel="stylesheet" href="./css/data_import_file.css">
+  <link rel="stylesheet" href="./css/data_import_none.css">
 </head>
 
 <body>
@@ -162,6 +163,51 @@
               </div>
 
             </div>
+
+            <div
+              id="apiImportResult"
+              class="api-import-result hidden"
+            >
+              <h3 class="api-import-result-title">
+                取得結果
+              </h3>
+
+              <div class="api-import-result-summary">
+                <div>
+                  <span class="api-import-result-label">
+                    取得先
+                  </span>
+                  <span id="apiResultUrl"></span>
+                </div>
+
+                <div>
+                  <span class="api-import-result-label">
+                    種類
+                  </span>
+                  <span id="apiResultContentType"></span>
+                </div>
+
+                <div>
+                  <span class="api-import-result-label">
+                    サイズ
+                  </span>
+                  <span id="apiResultSize"></span>
+                </div>
+
+                <div>
+                  <span class="api-import-result-label">
+                    保存先
+                  </span>
+                  <span id="apiResultStoragePath"></span>
+                </div>
+              </div>
+
+              <pre
+                id="apiResultPreview"
+                class="api-import-result-preview"
+              ></pre>
+            </div>
+
           </div>
 
         </div>
