@@ -2,13 +2,7 @@
  * data_import_file.js
  *
  * ファイル型データソースの取込処理
- *
- * API:
  * POST /data-import/file
- *
- * FormData:
- * - data_source_id
- * - file
  */
 
 console.log("data_import_file.js loaded");
@@ -17,25 +11,17 @@ console.log("data_import_file.js loaded");
   "use strict";
 
   function getFileInput() {
-    return document.getElementById(
-      "uploadFileInput"
-    );
+    return document.getElementById("uploadFileInput");
   }
 
   function getFileNameView() {
-    return document.getElementById(
-      "uploadFileName"
-    );
+    return document.getElementById("uploadFileName");
   }
 
   function getSelectedFile() {
     const input = getFileInput();
 
-    if (
-      !input ||
-      !input.files ||
-      input.files.length === 0
-    ) {
+    if (!input || !input.files || input.files.length === 0) {
       return null;
     }
 
@@ -43,29 +29,21 @@ console.log("data_import_file.js loaded");
   }
 
   function syncSelectedFileName() {
-    const input = getFileInput();
     const view = getFileNameView();
+    const file = getSelectedFile();
 
-    if (!input || !view) {
+    if (!view) {
       return;
     }
-
-    const file = getSelectedFile();
 
     if (file) {
       view.textContent = file.name;
-      view.classList.remove(
-        "is-empty"
-      );
+      view.classList.remove("is-empty");
       return;
     }
 
-    view.textContent =
-      "ファイルが選択されていません";
-
-    view.classList.add(
-      "is-empty"
-    );
+    view.textContent = "ファイルが選択されていません";
+    view.classList.add("is-empty");
   }
 
   function bindFileInput() {
@@ -75,11 +53,7 @@ console.log("data_import_file.js loaded");
       return;
     }
 
-    input.addEventListener(
-      "change",
-      syncSelectedFileName
-    );
-
+    input.addEventListener("change", syncSelectedFileName);
     syncSelectedFileName();
   }
 
@@ -103,41 +77,49 @@ console.log("data_import_file.js loaded");
       );
     }
 
-    writeLog?.(
-      `ファイル取込開始: ${file.name}`
-    );
+    writeLog?.(`ファイル取込開始: ${file.name}`);
 
-    const formData = new FormData();
+    let response = await uploadFile({
+      apiBase,
+      idToken,
+      dataSource,
+      file,
+      overwrite: false
+    });
 
-    formData.append(
-      "data_source_id",
-      dataSource.data_source_id
-    );
+    if (response.status === 409) {
+      const conflictData = await readResponseBody(response);
+      const message = getConflictMessage(conflictData);
 
-    formData.append(
-      "file",
-      file
-    );
-
-    const response = await fetch(
-      `${apiBase}/data-import/file`,
-      {
-        method: "POST",
-        headers: {
-          Authorization:
-            `Bearer ${idToken}`
-        },
-        body: formData
-      }
-    );
-
-    const result =
-      await readResponse(
-        response
+      const confirmed = window.confirm(
+        `${message}\n\n上書きしますか？`
       );
 
+      if (!confirmed) {
+        writeLog?.("ファイル取込をキャンセルしました。");
+
+        return {
+          status: "cancelled"
+        };
+      }
+
+      writeLog?.("同名ファイルを上書きします。");
+
+      response = await uploadFile({
+        apiBase,
+        idToken,
+        dataSource,
+        file,
+        overwrite: true
+      });
+    }
+
+    const result = await readResponse(response);
+
     writeLog?.(
-      "ファイル取込完了"
+      result.status === "updated"
+        ? "ファイル上書き完了"
+        : "ファイル取込完了"
     );
 
     writeResultLog(
@@ -146,6 +128,42 @@ console.log("data_import_file.js loaded");
     );
 
     return result;
+  }
+
+  async function uploadFile({
+    apiBase,
+    idToken,
+    dataSource,
+    file,
+    overwrite
+  }) {
+    const formData = new FormData();
+
+    formData.append(
+      "data_source_id",
+      dataSource.data_source_id
+    );
+
+    formData.append(
+      "overwrite",
+      String(Boolean(overwrite))
+    );
+
+    formData.append(
+      "file",
+      file
+    );
+
+    return await fetch(
+      `${apiBase}/data-import/file`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${idToken}`
+        },
+        body: formData
+      }
+    );
   }
 
   function validateArguments({
@@ -165,19 +183,15 @@ console.log("data_import_file.js loaded");
       );
     }
 
-    if (
-      !dataSource ||
-      !dataSource.data_source_id
-    ) {
+    if (!dataSource || !dataSource.data_source_id) {
       throw new Error(
         "データソースが選択されていません。"
       );
     }
 
     if (
-      String(
-        dataSource.source_type || ""
-      ).toLowerCase() !== "file"
+      String(dataSource.source_type || "").toLowerCase()
+      !== "file"
     ) {
       throw new Error(
         "ファイル型のデータソースではありません。"
@@ -185,13 +199,8 @@ console.log("data_import_file.js loaded");
     }
   }
 
-  async function readResponse(
-    response
-  ) {
-    const data =
-      await readResponseBody(
-        response
-      );
+  async function readResponse(response) {
+    const data = await readResponseBody(response);
 
     if (!response.ok) {
       throw new Error(
@@ -205,78 +214,78 @@ console.log("data_import_file.js loaded");
     return data;
   }
 
-  async function readResponseBody(
-    response
-  ) {
+  async function readResponseBody(response) {
     const contentType =
-      response.headers.get(
-        "content-type"
-      ) || "";
+      response.headers.get("content-type") || "";
 
-    if (
-      contentType.includes(
-        "application/json"
-      )
-    ) {
+    if (contentType.includes("application/json")) {
       return await response.json();
     }
 
-    const text =
-      await response.text();
-
     return {
-      message: text
+      message: await response.text()
     };
   }
 
-  function getErrorDetail(
-    response,
-    data
-  ) {
-    if (response.status === 409) {
+  function getConflictMessage(data) {
+    const detail = data?.detail;
+
+    if (typeof detail === "object" && detail) {
       return (
-        data?.detail ||
-        "同名ファイルは登録済みです。"
+        detail.message ||
+        "同名ファイルが既に登録されています。"
       );
     }
 
+    if (typeof detail === "string") {
+      return detail;
+    }
+
     return (
-      data?.detail ||
+      data?.message ||
+      "同名ファイルが既に登録されています。"
+    );
+  }
+
+  function getErrorDetail(response, data) {
+    const detail = data?.detail;
+
+    if (typeof detail === "object" && detail) {
+      return (
+        detail.message ||
+        JSON.stringify(detail)
+      );
+    }
+
+    if (typeof detail === "string") {
+      return detail;
+    }
+
+    return (
       data?.message ||
       `ファイル取込に失敗しました。HTTP ${response.status}`
     );
   }
 
-  function writeResultLog(
-    result,
-    writeLog
-  ) {
+  function writeResultLog(result, writeLog) {
     if (!writeLog || !result) {
       return;
     }
 
     if (result.message) {
-      writeLog(
-        result.message
-      );
+      writeLog(result.message);
     }
 
     if (result.file_id) {
-      writeLog(
-        `file_id=${result.file_id}`
-      );
+      writeLog(`file_id=${result.file_id}`);
     }
 
     if (result.file_name) {
-      writeLog(
-        `file_name=${result.file_name}`
-      );
+      writeLog(`file_name=${result.file_name}`);
     }
 
     if (result.gcs_path) {
-      writeLog(
-        `gcs_path=${result.gcs_path}`
-      );
+      writeLog(`gcs_path=${result.gcs_path}`);
     }
   }
 
