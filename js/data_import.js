@@ -77,6 +77,37 @@ const uploadedFileList =
   );
 
 
+const apiImportResult =
+  document.getElementById(
+    "apiImportResult"
+  );
+
+const apiResultUrl =
+  document.getElementById(
+    "apiResultUrl"
+  );
+
+const apiResultContentType =
+  document.getElementById(
+    "apiResultContentType"
+  );
+
+const apiResultSize =
+  document.getElementById(
+    "apiResultSize"
+  );
+
+const apiResultStoragePath =
+  document.getElementById(
+    "apiResultStoragePath"
+  );
+
+const apiResultPreview =
+  document.getElementById(
+    "apiResultPreview"
+  );
+
+
 const logText =
   document.getElementById(
     "logText"
@@ -858,6 +889,106 @@ function escapeHtml(
 }
 
 
+
+function clearApiImportResult() {
+  apiImportResult?.classList.add(
+    "hidden"
+  );
+
+  if (apiResultUrl) {
+    apiResultUrl.textContent =
+      "";
+  }
+
+  if (apiResultContentType) {
+    apiResultContentType.textContent =
+      "";
+  }
+
+  if (apiResultSize) {
+    apiResultSize.textContent =
+      "";
+  }
+
+  if (apiResultStoragePath) {
+    apiResultStoragePath.textContent =
+      "";
+  }
+
+  if (apiResultPreview) {
+    apiResultPreview.textContent =
+      "";
+  }
+}
+
+
+function renderApiImportResult(
+  result
+) {
+  if (
+    !apiImportResult ||
+    !result
+  ) {
+    return;
+  }
+
+  apiResultUrl.textContent =
+    result.requested_url ||
+    "";
+
+  apiResultContentType.textContent =
+    result.content_type ||
+    "";
+
+  apiResultSize.textContent =
+    formatFileSize(
+      result.size_bytes
+    );
+
+  apiResultStoragePath.textContent =
+    result.gcs_path ||
+    "";
+
+  if (apiResultPreview) {
+    if (
+      result.preview_available &&
+      result.preview_text
+    ) {
+      apiResultPreview.textContent =
+        result.preview_text;
+
+      apiResultPreview.classList.remove(
+        "is-empty"
+      );
+
+    } else {
+      apiResultPreview.textContent =
+        "画面表示できない形式です。Cloud Storageに保存されたファイルを確認してください。";
+
+      apiResultPreview.classList.add(
+        "is-empty"
+      );
+    }
+  }
+
+  apiImportResult.classList.remove(
+    "hidden"
+  );
+}
+
+
+function bindDataImportResultEvent() {
+  document.addEventListener(
+    "data-import:result",
+    event => {
+      renderApiImportResult(
+        event.detail?.result
+      );
+    }
+  );
+}
+
+
 async function runSelectedDataImport() {
   if (!currentDataSource) {
     alert(
@@ -1082,6 +1213,7 @@ function bindToolbarEvents() {
         null;
 
       clearSelectedFile();
+      clearApiImportResult();
       showEmptyPanel();
 
       if (detail.error) {
@@ -1113,6 +1245,7 @@ function bindToolbarEvents() {
           null;
 
         clearSelectedFile();
+        clearApiImportResult();
         showEmptyPanel();
 
         return;
@@ -1140,6 +1273,7 @@ function bindToolbarEvents() {
         };
 
       clearSelectedFile();
+      clearApiImportResult();
 
       try {
         currentDataSource =
@@ -1231,6 +1365,7 @@ async function initialize() {
   showEmptyPanel();
 
   bindToolbarEvents();
+  bindDataImportResultEvent();
 
   bindActionButton(
     btnUploadRegister

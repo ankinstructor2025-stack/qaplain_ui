@@ -73,6 +73,18 @@ console.log(
       writeLog
     );
 
+    document.dispatchEvent(
+      new CustomEvent(
+        "data-import:result",
+        {
+          detail: {
+            dataSource,
+            result
+          }
+        }
+      )
+    );
+
     return result;
   }
 
