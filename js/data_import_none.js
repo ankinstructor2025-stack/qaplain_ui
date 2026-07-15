@@ -12,10 +12,13 @@
  * }
  */
 
-console.log("data_import_none.js loaded");
+console.log(
+  "data_import_none.js loaded"
+);
 
 (function () {
   "use strict";
+
 
   async function run({
     apiBase,
@@ -33,23 +36,28 @@ console.log("data_import_none.js loaded");
       `データ取込開始: ${dataSource.data_source_name}`
     );
 
-    const response = await fetch(
-      `${apiBase}/data-import/none`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type":
-            "application/json",
+    const response =
+      await fetch(
+        `${apiBase}/data-import/none`,
+        {
+          method:
+            "POST",
 
-          Authorization:
-            `Bearer ${idToken}`
-        },
-        body: JSON.stringify({
-          data_source_id:
-            dataSource.data_source_id
-        })
-      }
-    );
+          headers: {
+            "Content-Type":
+              "application/json",
+
+            Authorization:
+              `Bearer ${idToken}`
+          },
+
+          body:
+            JSON.stringify({
+              data_source_id:
+                dataSource.data_source_id
+            })
+        }
+      );
 
     const result =
       await readResponse(
@@ -67,6 +75,7 @@ console.log("data_import_none.js loaded");
 
     return result;
   }
+
 
   function validateArguments({
     apiBase,
@@ -96,18 +105,28 @@ console.log("data_import_none.js loaded");
 
     const sourceType =
       String(
-        dataSource.source_type || ""
-      ).toLowerCase();
+        dataSource.source_type ||
+        ""
+      )
+        .trim()
+        .toLowerCase()
+        .replace(
+          /-/g,
+          "_"
+        );
 
     if (
       sourceType !== "url" &&
-      sourceType !== "api"
+      sourceType !== "api" &&
+      sourceType !== "public_url" &&
+      sourceType !== "public_api"
     ) {
       throw new Error(
         "URLまたはAPI型のデータソースではありません。"
       );
     }
   }
+
 
   async function readResponse(
     response
@@ -119,14 +138,16 @@ console.log("data_import_none.js loaded");
 
     if (!response.ok) {
       throw new Error(
-        data?.detail ||
-        data?.message ||
-        `データ取込に失敗しました。HTTP ${response.status}`
+        getErrorMessage(
+          response,
+          data
+        )
       );
     }
 
     return data;
   }
+
 
   async function readResponseBody(
     response
@@ -148,42 +169,79 @@ console.log("data_import_none.js loaded");
       await response.text();
 
     return {
-      message: text
+      message:
+        text
     };
   }
+
+
+  function getErrorMessage(
+    response,
+    data
+  ) {
+    const detail =
+      data?.detail;
+
+    if (
+      detail &&
+      typeof detail ===
+      "object"
+    ) {
+      return (
+        detail.message ||
+        JSON.stringify(
+          detail
+        )
+      );
+    }
+
+    return (
+      detail ||
+      data?.message ||
+      `データ取込に失敗しました。HTTP ${response.status}`
+    );
+  }
+
 
   function writeResultLog(
     result,
     writeLog
   ) {
-    if (!writeLog || !result) {
+    if (
+      !writeLog ||
+      !result
+    ) {
       return;
     }
 
     const fields = [
-      "message",
-      "requested_url",
-      "document_count",
-      "row_inserted",
-      "row_skipped",
-      "file_id",
-      "gcs_path"
+      ["message", "message"],
+      ["requested_url", "requested_url"],
+      ["http_status", "http_status"],
+      ["content_type", "content_type"],
+      ["size_bytes", "size_bytes"],
+      ["document_count", "document_count"],
+      ["item_id", "item_id"],
+      ["file_id", "file_id"],
+      ["gcs_path", "gcs_path"],
+      ["gcs_uri", "gcs_uri"]
     ];
 
     fields.forEach(
-      field => {
+      ([field, label]) => {
         if (
           result[field] !== undefined &&
           result[field] !== null &&
           result[field] !== ""
         ) {
           writeLog(
-            `${field}=${result[field]}`
+            `${label}=${result[field]}`
           );
         }
       }
     );
   }
+
 
   window.DataImportNone = {
     run
