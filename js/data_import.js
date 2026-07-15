@@ -4,15 +4,9 @@
  * 役割
  * - 共通ツールバーで選択されたデータソースを保持
  * - source_typeに応じて入力パネルを切り替え
- * - ファイルデータソースの対象拡張子で選択対象を制限
- * - 取込実行前にファイル拡張子を再検証
+ * - ファイル型データソースの対象拡張子を設定
+ * - アップロード済みファイル一覧を表示
  * - authentication_method_keyに応じて取込処理を振り分け
- *
- * 使用する処理:
- * - DataImportFile
- * - DataImportNone
- * - DataImportBasic
- * - DataImportClientCredentials
  */
 
 import {
@@ -56,11 +50,6 @@ const panelApi =
     "panelApi"
   );
 
-
-/*
- * 旧画面との互換用。
- * panelApiがHTMLにない場合だけ使用する。
- */
 const panelKokkai =
   document.getElementById(
     "panelKokkai"
@@ -80,6 +69,11 @@ const uploadFileInput =
 const uploadFileName =
   document.getElementById(
     "uploadFileName"
+  );
+
+const uploadedFileList =
+  document.getElementById(
+    "uploadedFileList"
   );
 
 
@@ -108,10 +102,6 @@ const btnApiRegister =
     "btnApiRegister"
   );
 
-
-/*
- * 旧HTMLのボタンIDとの互換用。
- */
 const btnKokkaiRegister =
   document.getElementById(
     "btnKokkaiRegister"
@@ -129,9 +119,6 @@ let currentDataSource =
   null;
 
 
-/**
- * ログ出力
- */
 function writeLog(
   message
 ) {
@@ -174,9 +161,6 @@ function writeLog(
 }
 
 
-/**
- * ログ消去
- */
 function clearLog() {
   if (logText) {
     logText.textContent =
@@ -185,9 +169,6 @@ function clearLog() {
 }
 
 
-/**
- * 現在のFirebase IDトークン取得
- */
 async function getCurrentIdToken() {
   const user =
     await waitForLogin();
@@ -196,9 +177,6 @@ async function getCurrentIdToken() {
 }
 
 
-/**
- * データソース種別正規化
- */
 function normalizeSourceType(
   value
 ) {
@@ -232,9 +210,6 @@ function normalizeSourceType(
 }
 
 
-/**
- * 認証方式正規化
- */
 function normalizeAuthenticationMethodKey(
   value
 ) {
@@ -266,12 +241,6 @@ function normalizeAuthenticationMethodKey(
 }
 
 
-/**
- * 拡張子正規化
- *
- * 例:
- * ".PDF" → "pdf"
- */
 function normalizeExtension(
   value
 ) {
@@ -287,61 +256,12 @@ function normalizeExtension(
 }
 
 
-/**
- * ファイル名から拡張子取得
- *
- * 例:
- * "sample.test.pdf" → "pdf"
- */
-function getFileExtension(
-  fileName
-) {
-  const normalizedName =
-    String(
-      fileName || ""
-    ).trim();
-
-  const dotIndex =
-    normalizedName.lastIndexOf(
-      "."
-    );
-
-  if (
-    dotIndex < 0 ||
-    dotIndex ===
-      normalizedName.length - 1
-  ) {
-    return "";
-  }
-
-  return normalizeExtension(
-    normalizedName.substring(
-      dotIndex + 1
-    )
-  );
-}
-
-
-/**
- * データソースに保存された対象拡張子を取得
- *
- * 対応形式:
- * extensions: ["csv", "pdf"]
- *
- * または
- *
- * extensions: [
- *   { extension: "csv" },
- *   { extension: "pdf" }
- * ]
- */
 function getAllowedExtensions(
   dataSource
 ) {
   const sourceExtensions =
     dataSource?.extensions ||
     dataSource?.allowed_extensions ||
-    dataSource?.allowed_file_types ||
     dataSource?.file_extensions ||
     [];
 
@@ -353,58 +273,36 @@ function getAllowedExtensions(
     return [];
   }
 
-  const extensions =
-    sourceExtensions
-      .map(
-        item => {
-          if (
-            typeof item ===
-            "string"
-          ) {
-            return normalizeExtension(
-              item
-            );
-          }
-
-          return normalizeExtension(
-            item?.extension ||
-            item?.value ||
-            item?.name ||
-            ""
-          );
-        }
-      )
-      .filter(
-        extension =>
-          extension
-      );
-
   return [
     ...new Set(
-      extensions
+      sourceExtensions
+        .map(
+          item => {
+            if (
+              typeof item ===
+              "string"
+            ) {
+              return normalizeExtension(
+                item
+              );
+            }
+
+            return normalizeExtension(
+              item?.extension ||
+              item?.value ||
+              ""
+            );
+          }
+        )
+        .filter(
+          extension =>
+            extension
+        )
     )
   ];
 }
 
 
-/**
- * 対象拡張子をデータソースに統一して格納
- */
-function normalizeExtensions(
-  source
-) {
-  const extensions =
-    getAllowedExtensions(
-      source
-    );
-
-  return extensions;
-}
-
-
-/**
- * ファイル選択欄のaccept属性を設定
- */
 function updateFileAccept(
   dataSource
 ) {
@@ -412,13 +310,13 @@ function updateFileAccept(
     return;
   }
 
-  const allowedExtensions =
+  const extensions =
     getAllowedExtensions(
       dataSource
     );
 
   if (
-    allowedExtensions.length === 0
+    extensions.length === 0
   ) {
     uploadFileInput.removeAttribute(
       "accept"
@@ -428,7 +326,7 @@ function updateFileAccept(
   }
 
   uploadFileInput.accept =
-    allowedExtensions
+    extensions
       .map(
         extension =>
           `.${extension}`
@@ -439,23 +337,7 @@ function updateFileAccept(
 }
 
 
-/**
- * ファイル選択をクリア
- */
-function clearSelectedFiles() {
-  if (uploadFileInput) {
-    uploadFileInput.value =
-      "";
-  }
-
-  updateSelectedFileName();
-}
-
-
-/**
- * 選択ファイル名表示
- */
-function updateSelectedFileName() {
+function syncSelectedFileName() {
   if (
     !uploadFileInput ||
     !uploadFileName
@@ -463,188 +345,39 @@ function updateSelectedFileName() {
     return;
   }
 
-  const files =
-    Array.from(
-      uploadFileInput.files ||
-      []
-    );
+  const file =
+    uploadFileInput.files?.[0];
 
-  if (
-    files.length === 0
-  ) {
+  if (file) {
     uploadFileName.textContent =
-      "ファイルが選択されていません";
+      file.name;
 
-    uploadFileName.classList.add(
+    uploadFileName.classList.remove(
       "is-empty"
     );
 
     return;
   }
 
-  uploadFileName.classList.remove(
+  uploadFileName.textContent =
+    "ファイルが選択されていません";
+
+  uploadFileName.classList.add(
     "is-empty"
   );
-
-  if (
-    files.length === 1
-  ) {
-    uploadFileName.textContent =
-      files[0].name;
-
-    return;
-  }
-
-  uploadFileName.textContent =
-    `${files.length}件のファイルを選択`;
 }
 
 
-/**
- * 選択ファイルの拡張子検証
- */
-function validateSelectedFiles(
-  files,
-  dataSource
-) {
-  const fileList =
-    Array.from(
-      files || []
-    );
-
-  if (
-    fileList.length === 0
-  ) {
-    return {
-      valid: false,
-      message:
-        "ファイルを選択してください。"
-    };
+function clearSelectedFile() {
+  if (uploadFileInput) {
+    uploadFileInput.value =
+      "";
   }
 
-  const allowedExtensions =
-    getAllowedExtensions(
-      dataSource
-    );
-
-  /*
-   * データソースに対象拡張子が設定されていない場合は、
-   * 誤って無制限に取り込ませずエラーとする。
-   */
-  if (
-    allowedExtensions.length === 0
-  ) {
-    return {
-      valid: false,
-      message:
-        "このデータソースには対象拡張子が設定されていません。"
-    };
-  }
-
-  const invalidFiles =
-    fileList.filter(
-      file => {
-        const extension =
-          getFileExtension(
-            file.name
-          );
-
-        return (
-          !extension ||
-          !allowedExtensions.includes(
-            extension
-          )
-        );
-      }
-    );
-
-  if (
-    invalidFiles.length === 0
-  ) {
-    return {
-      valid: true,
-      message: ""
-    };
-  }
-
-  const invalidFileNames =
-    invalidFiles
-      .map(
-        file =>
-          `・${file.name}`
-      )
-      .join(
-        "\n"
-      );
-
-  const allowedExtensionText =
-    allowedExtensions
-      .map(
-        extension =>
-          `.${extension}`
-      )
-      .join(
-        ", "
-      );
-
-  return {
-    valid: false,
-
-    message:
-      "対象外の拡張子が含まれています。\n\n" +
-      invalidFileNames +
-      "\n\n使用可能な拡張子:\n" +
-      allowedExtensionText
-  };
+  syncSelectedFileName();
 }
 
 
-/**
- * ファイル選択時処理
- */
-function handleUploadFileChange() {
-  updateSelectedFileName();
-
-  if (
-    !uploadFileInput ||
-    !currentDataSource
-  ) {
-    return;
-  }
-
-  const files =
-    Array.from(
-      uploadFileInput.files ||
-      []
-    );
-
-  if (
-    files.length === 0
-  ) {
-    return;
-  }
-
-  const validation =
-    validateSelectedFiles(
-      files,
-      currentDataSource
-    );
-
-  if (validation.valid) {
-    return;
-  }
-
-  alert(
-    validation.message
-  );
-
-  clearSelectedFiles();
-}
-
-
-/**
- * 全パネル非表示
- */
 function hideAllPanels() {
   [
     panelEmpty,
@@ -663,9 +396,6 @@ function hideAllPanels() {
 }
 
 
-/**
- * 未選択パネル表示
- */
 function showEmptyPanel() {
   hideAllPanels();
 
@@ -675,9 +405,6 @@ function showEmptyPanel() {
 }
 
 
-/**
- * データソースに対応するパネル表示
- */
 function showPanelForDataSource(
   dataSource
 ) {
@@ -724,10 +451,6 @@ function showPanelForDataSource(
     sourceType === "api" ||
     sourceType === "mail"
   ) {
-    /*
-     * 新HTMLではpanelApiを使用。
-     * 旧HTMLではpanelKokkaiまたはpanelOpenDataを代替表示。
-     */
     const apiPanel =
       panelApi ||
       panelKokkai ||
@@ -746,9 +469,6 @@ function showPanelForDataSource(
 }
 
 
-/**
- * データソース情報正規化
- */
 function normalizeDataSource(
   source
 ) {
@@ -791,16 +511,13 @@ function normalizeDataSource(
       ),
 
     extensions:
-      normalizeExtensions(
+      getAllowedExtensions(
         source
       )
   };
 }
 
 
-/**
- * データソース詳細取得
- */
 async function loadDataSourceDetail(
   dataSource
 ) {
@@ -818,18 +535,7 @@ async function loadDataSourceDetail(
     );
   }
 
-  /*
-   * ファイルデータソースは対象拡張子が必要なので、
-   * 必ず詳細APIから取得する。
-   */
-  if (
-    normalized.source_type !== "file" &&
-    normalized.authentication_method_key
-  ) {
-    return normalized;
-  }
-
-  const body =
+  const response =
     await authenticatedJsonOrThrow(
       `${API_BASE}/data-sources/${
         encodeURIComponent(
@@ -837,20 +543,321 @@ async function loadDataSourceDetail(
         )
       }`,
       {
-        method: "GET"
+        method:
+          "GET"
       }
     );
 
   return normalizeDataSource(
-    body?.data_source ||
-    body
+    response?.data_source ||
+    response
   );
 }
 
 
-/**
- * 選択されたデータソースの取込実行
- */
+function showUploadedFileMessage(
+  message
+) {
+  if (!uploadedFileList) {
+    return;
+  }
+
+  uploadedFileList.innerHTML = `
+    <div class="uploaded-file-message">
+      ${escapeHtml(message)}
+    </div>
+  `;
+}
+
+
+async function loadUploadedFiles(
+  dataSourceId
+) {
+  if (!uploadedFileList) {
+    return;
+  }
+
+  if (!dataSourceId) {
+    showUploadedFileMessage(
+      "データソースを選択してください。"
+    );
+
+    return;
+  }
+
+  showUploadedFileMessage(
+    "読み込み中..."
+  );
+
+  try {
+    const url =
+      new URL(
+        `${API_BASE}/data-import/uploaded-files`
+      );
+
+    url.searchParams.set(
+      "data_source_id",
+      dataSourceId
+    );
+
+    const result =
+      await authenticatedJsonOrThrow(
+        url.toString(),
+        {
+          method:
+            "GET"
+        }
+      );
+
+    const files =
+      Array.isArray(
+        result?.uploaded_files
+      )
+        ? result.uploaded_files
+        : [];
+
+    renderUploadedFiles(
+      files
+    );
+
+  } catch (error) {
+    console.error(
+      "アップロード済みファイル一覧取得エラー:",
+      error
+    );
+
+    showUploadedFileMessage(
+      error.message ||
+      "アップロード済みファイルを取得できませんでした。"
+    );
+  }
+}
+
+
+function renderUploadedFiles(
+  files
+) {
+  if (!uploadedFileList) {
+    return;
+  }
+
+  if (
+    !Array.isArray(files) ||
+    files.length === 0
+  ) {
+    showUploadedFileMessage(
+      "アップロード済みファイルはありません。"
+    );
+
+    return;
+  }
+
+  uploadedFileList.innerHTML =
+    files
+      .map(
+        file => `
+          <div class="uploaded-file-row">
+            <div class="uploaded-file-name">
+              ${escapeHtml(file.file_name || "")}
+            </div>
+
+            <div class="uploaded-file-extension">
+              ${escapeHtml(
+                formatExtension(
+                  file.extension
+                )
+              )}
+            </div>
+
+            <div class="uploaded-file-size">
+              ${escapeHtml(
+                formatFileSize(
+                  file.size_bytes
+                )
+              )}
+            </div>
+
+            <div class="uploaded-file-date">
+              ${escapeHtml(
+                formatDateTime(
+                  file.updated_at ||
+                  file.created_at
+                )
+              )}
+            </div>
+
+            <div class="uploaded-file-status">
+              ${escapeHtml(
+                formatStatus(
+                  file.status
+                )
+              )}
+            </div>
+          </div>
+        `
+      )
+      .join(
+        ""
+      );
+}
+
+
+function formatExtension(
+  value
+) {
+  const extension =
+    normalizeExtension(
+      value
+    );
+
+  return extension
+    ? `.${extension}`
+    : "";
+}
+
+
+function formatFileSize(
+  value
+) {
+  const size =
+    Number(
+      value
+    );
+
+  if (
+    !Number.isFinite(size) ||
+    size < 0
+  ) {
+    return "";
+  }
+
+  if (
+    size < 1024
+  ) {
+    return `${size} B`;
+  }
+
+  if (
+    size < 1024 * 1024
+  ) {
+    return `${
+      (size / 1024).toFixed(1)
+    } KB`;
+  }
+
+  return `${
+    (size / 1024 / 1024).toFixed(1)
+  } MB`;
+}
+
+
+function formatDateTime(
+  value
+) {
+  if (!value) {
+    return "";
+  }
+
+  const date =
+    new Date(
+      value
+    );
+
+  if (
+    Number.isNaN(
+      date.getTime()
+    )
+  ) {
+    return String(
+      value
+    );
+  }
+
+  return new Intl.DateTimeFormat(
+    "ja-JP",
+    {
+      year:
+        "numeric",
+
+      month:
+        "2-digit",
+
+      day:
+        "2-digit",
+
+      hour:
+        "2-digit",
+
+      minute:
+        "2-digit",
+
+      second:
+        "2-digit",
+
+      hour12:
+        false
+    }
+  ).format(
+    date
+  );
+}
+
+
+function formatStatus(
+  value
+) {
+  switch (
+    String(
+      value || ""
+    ).toLowerCase()
+  ) {
+    case "created":
+    case "uploaded":
+      return "登録済み";
+
+    case "updated":
+      return "更新済み";
+
+    case "error":
+      return "エラー";
+
+    default:
+      return String(
+        value || ""
+      );
+  }
+}
+
+
+function escapeHtml(
+  value
+) {
+  return String(
+    value ?? ""
+  )
+    .replace(
+      /&/g,
+      "&amp;"
+    )
+    .replace(
+      /</g,
+      "&lt;"
+    )
+    .replace(
+      />/g,
+      "&gt;"
+    )
+    .replace(
+      /"/g,
+      "&quot;"
+    )
+    .replace(
+      /'/g,
+      "&#39;"
+    );
+}
+
+
 async function runSelectedDataImport() {
   if (!currentDataSource) {
     alert(
@@ -860,10 +867,8 @@ async function runSelectedDataImport() {
     return;
   }
 
-  let dataSource;
-
   try {
-    dataSource =
+    const dataSource =
       await loadDataSourceDetail(
         currentDataSource
       );
@@ -882,10 +887,22 @@ async function runSelectedDataImport() {
       dataSource.source_type ===
       "file"
     ) {
-      await runFileImport({
-        idToken,
-        dataSource
-      });
+      const result =
+        await runFileImport({
+          idToken,
+          dataSource
+        });
+
+      if (
+        result?.status !==
+        "cancelled"
+      ) {
+        clearSelectedFile();
+
+        await loadUploadedFiles(
+          dataSource.data_source_id
+        );
+      }
 
       return;
     }
@@ -945,25 +962,10 @@ async function runSelectedDataImport() {
 }
 
 
-/**
- * ファイル取込
- */
 async function runFileImport({
   idToken,
   dataSource
 }) {
-  const validation =
-    validateSelectedFiles(
-      uploadFileInput?.files,
-      dataSource
-    );
-
-  if (!validation.valid) {
-    throw new Error(
-      validation.message
-    );
-  }
-
   validateModule(
     window.DataImportFile,
     "data_import_file.js"
@@ -977,20 +979,11 @@ async function runFileImport({
 
     dataSource,
 
-    files:
-      Array.from(
-        uploadFileInput?.files ||
-        []
-      ),
-
     writeLog
   });
 }
 
 
-/**
- * 認証なし取込
- */
 async function runNoneImport({
   idToken,
   dataSource
@@ -1013,9 +1006,6 @@ async function runNoneImport({
 }
 
 
-/**
- * Basic認証取込
- */
 async function runBasicImport({
   idToken,
   dataSource
@@ -1038,9 +1028,6 @@ async function runBasicImport({
 }
 
 
-/**
- * Client Credentials取込
- */
 async function runClientCredentialsImport({
   idToken,
   dataSource
@@ -1063,9 +1050,6 @@ async function runClientCredentialsImport({
 }
 
 
-/**
- * 分割JS読込確認
- */
 function validateModule(
   moduleObject,
   fileName
@@ -1082,9 +1066,6 @@ function validateModule(
 }
 
 
-/**
- * 共通ツールバーイベント
- */
 function bindToolbarEvents() {
   document.addEventListener(
     "toolbar:ready",
@@ -1100,7 +1081,7 @@ function bindToolbarEvents() {
       currentDataSource =
         null;
 
-      clearSelectedFiles();
+      clearSelectedFile();
       showEmptyPanel();
 
       if (detail.error) {
@@ -1131,7 +1112,7 @@ function bindToolbarEvents() {
         currentDataSource =
           null;
 
-        clearSelectedFiles();
+        clearSelectedFile();
         showEmptyPanel();
 
         return;
@@ -1158,91 +1139,69 @@ function bindToolbarEvents() {
             ""
         };
 
-      currentDataSource =
-        normalizeDataSource(
-          source
+      clearSelectedFile();
+
+      try {
+        currentDataSource =
+          await loadDataSourceDetail(
+            source
+          );
+
+        showPanelForDataSource(
+          currentDataSource
         );
 
-      clearSelectedFiles();
-
-      /*
-       * ファイルデータソースは選択直後に詳細を取得し、
-       * accept属性へ対象拡張子を反映する。
-       */
-      if (
-        currentDataSource.source_type ===
-        "file"
-      ) {
-        try {
-          currentDataSource =
-            await loadDataSourceDetail(
-              currentDataSource
-            );
-
-          const allowedExtensions =
+        if (
+          currentDataSource.source_type ===
+          "file"
+        ) {
+          const extensions =
             getAllowedExtensions(
               currentDataSource
             );
 
-          updateFileAccept(
-            currentDataSource
-          );
-
-          if (
-            allowedExtensions.length >
-            0
-          ) {
-            writeLog(
-              "対象拡張子: " +
-              allowedExtensions
-                .map(
-                  extension =>
-                    `.${extension}`
-                )
-                .join(
-                  ", "
-                )
-            );
-          } else {
-            writeLog(
-              "対象拡張子が設定されていません。"
-            );
-          }
-
-        } catch (error) {
-          console.error(
-            "データソース詳細取得エラー:",
-            error
-          );
-
-          uploadFileInput?.removeAttribute(
-            "accept"
-          );
-
           writeLog(
-            `データソース設定取得失敗: ${
-              error.message
-            }`
+            extensions.length > 0
+              ? (
+                  "対象拡張子: " +
+                  extensions
+                    .map(
+                      extension =>
+                        `.${extension}`
+                    )
+                    .join(
+                      ", "
+                    )
+                )
+              : "対象拡張子が設定されていません。"
           );
 
-          alert(
-            error.message ||
-            "データソース設定を取得できませんでした。"
+          await loadUploadedFiles(
+            currentDataSource.data_source_id
           );
         }
-      }
 
-      showPanelForDataSource(
-        currentDataSource
-      );
+      } catch (error) {
+        currentDataSource =
+          null;
+
+        showEmptyPanel();
+
+        console.error(
+          "データソース詳細取得エラー:",
+          error
+        );
+
+        alert(
+          error.message ||
+          "データソース設定を取得できませんでした。"
+        );
+      }
     }
   );
 }
 
 
-/**
- * 取込ボタン共通処理
- */
 function bindActionButton(
   button
 ) {
@@ -1268,11 +1227,9 @@ function bindActionButton(
 }
 
 
-/**
- * 初期化
- */
 async function initialize() {
   showEmptyPanel();
+
   bindToolbarEvents();
 
   bindActionButton(
@@ -1287,9 +1244,6 @@ async function initialize() {
     btnApiRegister
   );
 
-  /*
-   * 旧HTMLのボタンも同じ共通処理へ接続する。
-   */
   bindActionButton(
     btnKokkaiRegister
   );
@@ -1300,7 +1254,7 @@ async function initialize() {
 
   uploadFileInput?.addEventListener(
     "change",
-    handleUploadFileChange
+    syncSelectedFileName
   );
 
   btnClearLog?.addEventListener(
@@ -1353,9 +1307,6 @@ async function initialize() {
 }
 
 
-/**
- * DOM読込後に初期化
- */
 document.addEventListener(
   "DOMContentLoaded",
   () => {
