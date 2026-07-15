@@ -138,37 +138,17 @@
   </div>
 </div>
 
-<script
-  type="module"
-  src="./js/common_toolbar.js"
-></script>
 
 <script src="./js/data_import_file.js"></script>
 <script src="./js/data_import_none.js"></script>
 <script src="./js/data_import_basic.js"></script>
 <script src="./js/data_import_client_credentials.js"></script>
 
-<script src="./js/data_import.js"></script>
+<script
+  type="module"
+  src="./js/data_import.js"
+></script>
 
-<script>
-  renderPageToolbar({
-    mountId: "pageToolbar",
-    title: "データ取込",
-    showSourceSelect: true,
-    showDbSelect: false,
-    enableDbAutoLoad: false,
-    actions: [
-      {
-        id: "btnMenu",
-        label: "メニュー"
-      },
-      {
-        id: "btnLogout",
-        label: "ログアウト"
-      }
-    ]
-  });
-</script>
 
 </body>
 </html>
