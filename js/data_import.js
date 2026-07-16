@@ -150,7 +150,7 @@ let currentDataSource =
   null;
 
 let currentImportMethod =
-  "file_upload";
+  "";
 
 
 function writeLog(
@@ -1272,6 +1272,42 @@ function validateModule(
 }
 
 
+function isFileUploadSelection(
+  detail
+) {
+  const values = [
+    detail?.authenticationMethodKey,
+    detail?.authentication_method_key,
+    detail?.dataSourceId,
+    detail?.sourceId,
+    detail?.sourceKey,
+    detail?.dataSourceName,
+    detail?.sourceLabel,
+    detail?.dataSource?.authentication_method_key,
+    detail?.dataSource?.authenticationMethodKey,
+    detail?.dataSource?.data_source_id,
+    detail?.dataSource?.data_source_name
+  ];
+
+  return values.some(
+    value => {
+      const normalized = String(
+        value || ""
+      )
+        .trim()
+        .toLowerCase()
+        .replace(/-/g, "_");
+
+      return (
+        normalized === "file_upload" ||
+        normalized === "file" ||
+        normalized === "ファイルアップロード"
+      );
+    }
+  );
+}
+
+
 function bindToolbarEvents() {
   document.addEventListener(
     "toolbar:ready",
@@ -1288,23 +1324,11 @@ function bindToolbarEvents() {
         null;
 
       currentImportMethod =
-        "file_upload";
+        "";
 
       clearSelectedFile();
       clearApiImportResult();
-      hideAllPanels();
-      panelUpload?.classList.remove(
-        "hidden"
-      );
-
-      loadUploadedFiles().catch(
-        error => {
-          console.error(
-            "アップロード済みファイル一覧取得エラー:",
-            error
-          );
-        }
-      );
+      showEmptyPanel();
 
       if (detail.error) {
         writeLog(
@@ -1324,16 +1348,7 @@ function bindToolbarEvents() {
         event.detail ||
         {};
 
-      const selectedMethodKey =
-        normalizeAuthenticationMethodKey(
-          detail.authenticationMethodKey ||
-          detail.authentication_method_key ||
-          detail.dataSource?.authentication_method_key ||
-          detail.dataSource?.authenticationMethodKey ||
-          ""
-        );
-
-      if (selectedMethodKey === "file_upload") {
+      if (isFileUploadSelection(detail)) {
         currentImportMethod =
           "file_upload";
 
@@ -1360,6 +1375,9 @@ function bindToolbarEvents() {
       if (!sourceId) {
         currentDataSource =
           null;
+
+        currentImportMethod =
+          "";
 
         clearSelectedFile();
         clearApiImportResult();
