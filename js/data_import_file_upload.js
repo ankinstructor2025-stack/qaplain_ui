@@ -1,8 +1,10 @@
 /**
  * data_import_file_upload.js
  *
- * ファイルアップロード方式のデータソース取込処理
+ * ファイルアップロード処理
  * POST /data-import/file-upload
+ *
+ * ファイルアップロードではデータソースを使用しない。
  */
 
 console.log("data_import_file_upload.js loaded");
@@ -60,13 +62,11 @@ console.log("data_import_file_upload.js loaded");
   async function run({
     apiBase,
     idToken,
-    dataSource,
     writeLog
   }) {
     validateArguments({
       apiBase,
-      idToken,
-      dataSource
+      idToken
     });
 
     const file = getSelectedFile();
@@ -82,7 +82,6 @@ console.log("data_import_file_upload.js loaded");
     let response = await uploadFile({
       apiBase,
       idToken,
-      dataSource,
       file,
       overwrite: false
     });
@@ -108,7 +107,6 @@ console.log("data_import_file_upload.js loaded");
       response = await uploadFile({
         apiBase,
         idToken,
-        dataSource,
         file,
         overwrite: true
       });
@@ -133,16 +131,10 @@ console.log("data_import_file_upload.js loaded");
   async function uploadFile({
     apiBase,
     idToken,
-    dataSource,
     file,
     overwrite
   }) {
     const formData = new FormData();
-
-    formData.append(
-      "data_source_id",
-      dataSource.data_source_id
-    );
 
     formData.append(
       "overwrite",
@@ -168,8 +160,7 @@ console.log("data_import_file_upload.js loaded");
 
   function validateArguments({
     apiBase,
-    idToken,
-    dataSource
+    idToken
   }) {
     if (!apiBase) {
       throw new Error(
@@ -180,32 +171,6 @@ console.log("data_import_file_upload.js loaded");
     if (!idToken) {
       throw new Error(
         "idTokenがありません。"
-      );
-    }
-
-    if (!dataSource || !dataSource.data_source_id) {
-      throw new Error(
-        "データソースが選択されていません。"
-      );
-    }
-
-    const methodKey =
-      String(
-        dataSource.authentication_method_key ||
-        ""
-      )
-        .trim()
-        .toLowerCase()
-        .replace(
-          /-/g,
-          "_"
-        );
-
-    if (
-      methodKey !== "file_upload"
-    ) {
-      throw new Error(
-        "ファイルアップロード方式のデータソースではありません。"
       );
     }
   }
