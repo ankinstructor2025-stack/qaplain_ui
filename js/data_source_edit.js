@@ -162,7 +162,10 @@ async function initialize() {
 
         sourceTypeSelect.addEventListener(
             "change",
-            handleSourceTypeChanged
+            () => {
+                handleSourceTypeChanged();
+                handleAuthenticationMethodChanged();
+            }
         );
 
         authenticationMethodSelect.addEventListener(
@@ -575,38 +578,21 @@ function setDataSourceValues(
 
 
 function handleSourceTypeChanged() {
-    hideSourceSettings();
-
-    const sourceType =
-        sourceTypeSelect.value;
-
-    if (sourceType === "file") {
-        fileSettings.classList.remove(
-            "hidden"
+    const methodKey =
+        normalizeAuthenticationMethodKey(
+            authenticationMethodSelect.value
         );
-
-        return;
-    }
-
-    if (sourceType === "mail") {
-        mailSettings.classList.remove(
-            "hidden"
-        );
-
-        return;
-    }
 
     if (
-        sourceType === "url" ||
-        sourceType === "api"
+        methodKey &&
+        methodKey !== "file_upload"
     ) {
-        connectionSettings.classList.remove(
-            "hidden"
+        httpMethodRow.classList.toggle(
+            "hidden",
+            sourceTypeSelect.value !== "api"
         );
-    }
-
-    if (sourceType === "api") {
-        httpMethodRow.classList.remove(
+    } else {
+        httpMethodRow.classList.add(
             "hidden"
         );
     }
@@ -633,12 +619,34 @@ function hideSourceSettings() {
 
 
 function handleAuthenticationMethodChanged() {
+    hideSourceSettings();
     hideAuthenticationFields();
 
     const methodKey =
         normalizeAuthenticationMethodKey(
             authenticationMethodSelect.value
         );
+
+    if (!methodKey) {
+        return;
+    }
+
+    if (methodKey === "file_upload") {
+        fileSettings.classList.remove(
+            "hidden"
+        );
+
+        return;
+    }
+
+    connectionSettings.classList.remove(
+        "hidden"
+    );
+
+    httpMethodRow.classList.toggle(
+        "hidden",
+        sourceTypeSelect.value !== "api"
+    );
 
     if (methodKey === "basic") {
         basicAuthenticationFields.classList.remove(
@@ -913,45 +921,46 @@ function validateInput() {
         );
     }
 
-    const sourceType =
-        sourceTypeSelect.value;
-
-    if (!sourceType) {
+    if (
+        !sourceTypeSelect.value.trim()
+    ) {
         return (
             "データソース種別を選択してください。"
         );
     }
 
-    if (
-        sourceType === "file" &&
-        getSelectedFileExtensions().length === 0
-    ) {
+    const methodKey =
+        normalizeAuthenticationMethodKey(
+            authenticationMethodSelect.value
+        );
+
+    if (!methodKey) {
         return (
-            "対象拡張子を1つ以上選択してください。"
+            "認証方式を選択してください。"
         );
     }
 
-    if (
-        sourceType === "url" ||
-        sourceType === "api"
-    ) {
+    if (methodKey === "file_upload") {
         if (
-            !endpointUrlInput.value.trim()
+            getSelectedFileExtensions().length === 0
         ) {
             return (
-                "接続先URLを入力してください。"
+                "対象拡張子を1つ以上選択してください。"
             );
         }
 
-        const authenticationMessage =
-            validateAuthentication();
-
-        if (authenticationMessage) {
-            return authenticationMessage;
-        }
+        return "";
     }
 
-    return "";
+    if (
+        !endpointUrlInput.value.trim()
+    ) {
+        return (
+            "接続先URLを入力してください。"
+        );
+    }
+
+    return validateAuthentication();
 }
 
 
@@ -965,6 +974,13 @@ function validateAuthentication() {
         return (
             "認証方式を選択してください。"
         );
+    }
+
+    if (
+        methodKey === "none" ||
+        methodKey === "file_upload"
+    ) {
+        return "";
     }
 
     if (methodKey === "basic") {
@@ -984,6 +1000,8 @@ function validateAuthentication() {
                 "パスワードを入力してください。"
             );
         }
+
+        return "";
     }
 
     if (
@@ -1007,22 +1025,39 @@ function validateAuthentication() {
                 "クライアントシークレットを入力してください。"
             );
         }
+
+        if (
+            !tokenUrlInput.value.trim()
+        ) {
+            return (
+                "トークンURLを入力してください。"
+            );
+        }
+
+        return "";
     }
 
-    return "";
+    return (
+        "未対応の認証方式です。"
+    );
 }
 
 
 function createRequestBody() {
-    const sourceType =
-        sourceTypeSelect.value;
+    const methodKey =
+        normalizeAuthenticationMethodKey(
+            authenticationMethodSelect.value
+        );
 
     const body = {
         data_source_name:
             dataSourceNameInput.value.trim(),
 
         source_type:
-            sourceType,
+            sourceTypeSelect.value,
+
+        authentication_method_key:
+            methodKey,
 
         enabled:
             enabledInput.checked,
@@ -1049,35 +1084,25 @@ function createRequestBody() {
             )
     };
 
-    if (sourceType === "file") {
+    if (methodKey === "file_upload") {
         body.file_extensions =
             getSelectedFileExtensions();
+
+        return body;
     }
 
-    if (sourceType === "mail") {
-        body.file_extensions =
-            splitExtensions(
-                mailExtensionsInput.value
-            );
-    }
+    body.endpoint_url =
+        endpointUrlInput.value.trim();
 
-    if (
-        sourceType === "url" ||
-        sourceType === "api"
-    ) {
-        body.endpoint_url =
-            endpointUrlInput.value.trim();
+    body.http_method =
+        sourceTypeSelect.value === "api"
+            ? httpMethodSelect.value
+            : "GET";
 
-        body.http_method =
-            sourceType === "api"
-                ? httpMethodSelect.value
-                : "GET";
-
-        Object.assign(
-            body,
-            createAuthenticationRequest()
-        );
-    }
+    Object.assign(
+        body,
+        createAuthenticationRequest()
+    );
 
     return body;
 }
@@ -1089,10 +1114,7 @@ function createAuthenticationRequest() {
             authenticationMethodSelect.value
         );
 
-    const authentication = {
-        authentication_method_key:
-            methodKey
-    };
+    const authentication = {};
 
     if (methodKey === "basic") {
         authentication.username =
@@ -1102,6 +1124,8 @@ function createAuthenticationRequest() {
             authentication.password =
                 basicPasswordInput.value;
         }
+
+        return authentication;
     }
 
     if (
@@ -1304,9 +1328,9 @@ function isClientCredentialsMethod(
     methodKey
 ) {
     return (
-        methodKey === "credential" ||
-        methodKey === "credentials" ||
-        methodKey === "client_credentials"
+        normalizeAuthenticationMethodKey(
+            methodKey
+        ) === "client_credentials"
     );
 }
 

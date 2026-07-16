@@ -416,16 +416,14 @@ function getAuthenticationMethodLabel(
             );
 
     const labels = {
+        file_upload:
+            "ファイルアップロード",
         none:
             "認証なし",
         basic:
-            "ベーシック認証",
-        credential:
-            "クレデンシャル",
-        credentials:
-            "クレデンシャル",
+            "Basic認証",
         client_credentials:
-            "クライアントクレデンシャル"
+            "OAuth 2.0 クライアントクレデンシャル"
     };
 
     return (
@@ -440,56 +438,32 @@ function getAuthenticationMethodLabel(
 function getConnectionTarget(
     dataSource
 ) {
-
-    if (
-        dataSource.endpoint_url
-    ) {
-
-        return (
-            dataSource.endpoint_url
-        );
-
-    }
-
-    if (
-        dataSource.target_url
-    ) {
-
-        return (
-            dataSource.target_url
-        );
-
-    }
-
-    const sourceType =
+    const methodKey =
         String(
-            dataSource.source_type || ""
+            dataSource.authentication_method_key ||
+            dataSource.method_key ||
+            ""
         )
             .trim()
-            .toLowerCase();
+            .toLowerCase()
+            .replaceAll(
+                "-",
+                "_"
+            );
 
-    if (sourceType === "file") {
-
+    if (methodKey === "file_upload") {
         return (
             formatExtensions(
                 dataSource.file_extensions
             )
         );
-
     }
 
-    if (sourceType === "mail") {
-
-        return (
-            formatExtensions(
-                dataSource.file_extensions
-            )
-        );
-
-    }
-
-    return "";
-
+    return (
+        dataSource.endpoint_url ||
+        dataSource.target_url ||
+        ""
+    );
 }
 
 
