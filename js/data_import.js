@@ -3,7 +3,7 @@
  *
  * 役割
  * - 共通ツールバーで選択されたデータソースを保持
- * - source_typeに応じて入力パネルを切り替え
+ * - authentication_method_keyに応じて入力パネルを切り替え
  * - ファイル型データソースの対象拡張子を設定
  * - アップロード済みファイル一覧を表示
  * - authentication_method_keyに応じて取込処理を振り分け
@@ -449,13 +449,18 @@ function showPanelForDataSource(
     return;
   }
 
+  const methodKey =
+    normalizeAuthenticationMethodKey(
+      dataSource.authentication_method_key
+    );
+
   const sourceType =
     normalizeSourceType(
       dataSource.source_type
     );
 
   if (
-    sourceType === "file"
+    methodKey === "file_upload"
   ) {
     updateFileAccept(
       dataSource
@@ -1105,36 +1110,33 @@ async function runSelectedDataImport() {
       `データソース: ${dataSource.data_source_name}`
     );
 
-    if (
-      dataSource.source_type ===
-      "file"
-    ) {
-      const result =
-        await runFileImport({
-          idToken,
-          dataSource
-        });
-
-      if (
-        result?.status !==
-        "cancelled"
-      ) {
-        clearSelectedFile();
-
-        await loadUploadedFiles(
-          dataSource.data_source_id
-        );
-      }
-
-      return;
-    }
-
     const methodKey =
       normalizeAuthenticationMethodKey(
         dataSource.authentication_method_key
       );
 
     switch (methodKey) {
+      case "file_upload": {
+        const result =
+          await runFileUploadImport({
+            idToken,
+            dataSource
+          });
+
+        if (
+          result?.status !==
+          "cancelled"
+        ) {
+          clearSelectedFile();
+
+          await loadUploadedFiles(
+            dataSource.data_source_id
+          );
+        }
+
+        return;
+      }
+
       case "none":
         await runNoneImport({
           idToken,
@@ -1184,16 +1186,16 @@ async function runSelectedDataImport() {
 }
 
 
-async function runFileImport({
+async function runFileUploadImport({
   idToken,
   dataSource
 }) {
   validateModule(
-    window.DataImportFile,
-    "data_import_file.js"
+    window.DataImportFileUpload,
+    "data_import_file_upload.js"
   );
 
-  return await window.DataImportFile.run({
+  return await window.DataImportFileUpload.run({
     apiBase:
       API_BASE,
 
@@ -1376,9 +1378,13 @@ function bindToolbarEvents() {
           currentDataSource
         );
 
+        const methodKey =
+          normalizeAuthenticationMethodKey(
+            currentDataSource.authentication_method_key
+          );
+
         if (
-          currentDataSource.source_type ===
-          "file"
+          methodKey === "file_upload"
         ) {
           const extensions =
             getAllowedExtensions(
@@ -1405,14 +1411,7 @@ function bindToolbarEvents() {
             currentDataSource.data_source_id
           );
 
-        } else if (
-          currentDataSource.source_type ===
-            "api" ||
-          currentDataSource.source_type ===
-            "url" ||
-          currentDataSource.source_type ===
-            "mail"
-        ) {
+        } else {
           await loadImportedItems(
             currentDataSource.data_source_id
           );
