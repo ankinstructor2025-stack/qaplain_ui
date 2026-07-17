@@ -742,17 +742,10 @@ function handleAuthenticationMethodChanged() {
         "hidden"
     );
 
-    httpMethodRow.classList.toggle(
-        "hidden",
-        sourceTypeSelect.value !== "api"
-    );
-
     if (methodKey === "basic") {
         basicAuthenticationFields.classList.remove(
             "hidden"
         );
-
-        return;
     }
 
     if (
@@ -764,8 +757,9 @@ function handleAuthenticationMethodChanged() {
             "hidden"
         );
     }
-}
 
+    handleSourceTypeChanged();
+}
 
 function hideAuthenticationFields() {
     basicAuthenticationFields.classList.add(
