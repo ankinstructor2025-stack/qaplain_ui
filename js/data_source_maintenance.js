@@ -184,7 +184,7 @@ function createDataSourceRow(
             getDataSourceName(
                 dataSource
             ),
-            "22%"
+            "19%"
         )
     );
 
@@ -192,6 +192,15 @@ function createDataSourceRow(
         createTextColumn(
             getSourceTypeLabel(
                 dataSource.source_type
+            ),
+            "11%"
+        )
+    );
+
+    row.appendChild(
+        createTextColumn(
+            getRetrievalTypeLabel(
+                dataSource
             ),
             "14%"
         )
@@ -202,7 +211,7 @@ function createDataSourceRow(
             getAuthenticationMethodLabel(
                 dataSource
             ),
-            "18%"
+            "17%"
         )
     );
 
@@ -211,7 +220,7 @@ function createDataSourceRow(
             getConnectionTarget(
                 dataSource
             ),
-            "28%"
+            "22%"
         )
     );
 
@@ -385,6 +394,46 @@ function getSourceTypeLabel(
         ""
     );
 
+}
+
+
+function getRetrievalTypeLabel(
+    dataSource
+) {
+    const retrievalType =
+        String(
+            dataSource.retrieval_type ||
+            (
+                dataSource.source_type === "file"
+                    ? "file"
+                    : ""
+            )
+        )
+            .trim()
+            .toLowerCase()
+            .replaceAll(
+                "-",
+                "_"
+            );
+
+    if (retrievalType === "structured_data") {
+        const dataFormat =
+            String(
+                dataSource.data_format ||
+                ""
+            )
+                .trim()
+                .toUpperCase();
+
+        return dataFormat ||
+            "JSON／XMLデータ";
+    }
+
+    if (retrievalType === "file") {
+        return "ファイル";
+    }
+
+    return "";
 }
 
 

@@ -33,6 +33,22 @@ const sourceTypeSelect = document.getElementById(
     "sourceTypeSelect"
 );
 
+const retrievalTypeRow = document.getElementById(
+    "retrievalTypeRow"
+);
+
+const retrievalTypeSelect = document.getElementById(
+    "retrievalTypeSelect"
+);
+
+const dataFormatRow = document.getElementById(
+    "dataFormatRow"
+);
+
+const dataFormatSelect = document.getElementById(
+    "dataFormatSelect"
+);
+
 const fileSettings = document.getElementById(
     "fileSettings"
 );
@@ -171,6 +187,11 @@ async function initialize() {
         authenticationMethodSelect.addEventListener(
             "change",
             handleAuthenticationMethodChanged
+        );
+
+        retrievalTypeSelect.addEventListener(
+            "change",
+            handleRetrievalTypeChanged
         );
 
         addParameterButton.addEventListener(
@@ -492,6 +513,21 @@ function setDataSourceValues(
             dataSource.source_type
         );
 
+    retrievalTypeSelect.value =
+        normalizeRetrievalType(
+            dataSource.retrieval_type ||
+            (
+                dataSource.source_type === "file"
+                    ? "file"
+                    : ""
+            )
+        );
+
+    dataFormatSelect.value =
+        normalizeDataFormat(
+            dataSource.data_format
+        );
+
     setSelectedFileExtensions(
         dataSource.file_extensions
     );
@@ -573,33 +609,93 @@ function setDataSourceValues(
 
     handleSourceTypeChanged();
     handleAuthenticationMethodChanged();
+    handleRetrievalTypeChanged();
     renderParameters();
 }
 
 
 function handleSourceTypeChanged() {
+    const sourceType =
+        normalizeSourceType(
+            sourceTypeSelect.value
+        );
+
     const methodKey =
         normalizeAuthenticationMethodKey(
             authenticationMethodSelect.value
         );
 
-    if (
-        methodKey &&
-        methodKey !== "file_upload"
-    ) {
-        httpMethodRow.classList.toggle(
-            "hidden",
-            sourceTypeSelect.value !== "api"
-        );
-    } else {
-        httpMethodRow.classList.add(
-            "hidden"
-        );
+    const isExternalSource =
+        sourceType === "api" ||
+        sourceType === "url";
+
+    retrievalTypeRow.classList.toggle(
+        "hidden",
+        !isExternalSource ||
+        methodKey === "file_upload"
+    );
+
+    if (!isExternalSource) {
+        retrievalTypeSelect.value =
+            sourceType === "file"
+                ? "file"
+                : "";
     }
+
+    httpMethodRow.classList.toggle(
+        "hidden",
+        !isExternalSource ||
+        sourceType !== "api" ||
+        methodKey === "file_upload"
+    );
+
+    handleRetrievalTypeChanged();
+}
+
+
+function handleRetrievalTypeChanged() {
+    const sourceType =
+        normalizeSourceType(
+            sourceTypeSelect.value
+        );
+
+    const methodKey =
+        normalizeAuthenticationMethodKey(
+            authenticationMethodSelect.value
+        );
+
+    const retrievalType =
+        normalizeRetrievalType(
+            retrievalTypeSelect.value
+        );
+
+    const isFileUpload =
+        methodKey === "file_upload" ||
+        sourceType === "file";
+
+    dataFormatRow.classList.toggle(
+        "hidden",
+        isFileUpload ||
+        retrievalType !== "structured_data"
+    );
+
+    fileSettings.classList.toggle(
+        "hidden",
+        !isFileUpload &&
+        retrievalType !== "file"
+    );
 }
 
 
 function hideSourceSettings() {
+    retrievalTypeRow.classList.add(
+        "hidden"
+    );
+
+    dataFormatRow.classList.add(
+        "hidden"
+    );
+
     fileSettings.classList.add(
         "hidden"
     );
@@ -632,6 +728,9 @@ function handleAuthenticationMethodChanged() {
     }
 
     if (methodKey === "file_upload") {
+        retrievalTypeSelect.value =
+            "file";
+
         fileSettings.classList.remove(
             "hidden"
         );
@@ -960,6 +1059,39 @@ function validateInput() {
         );
     }
 
+    const retrievalType =
+        normalizeRetrievalType(
+            retrievalTypeSelect.value
+        );
+
+    if (!retrievalType) {
+        return (
+            "取得方式を選択してください。"
+        );
+    }
+
+    if (retrievalType === "structured_data") {
+        const dataFormat =
+            normalizeDataFormat(
+                dataFormatSelect.value
+            );
+
+        if (!dataFormat) {
+            return (
+                "データ形式を選択してください。"
+            );
+        }
+    }
+
+    if (
+        retrievalType === "file" &&
+        getSelectedFileExtensions().length === 0
+    ) {
+        return (
+            "対象拡張子を1つ以上選択してください。"
+        );
+    }
+
     return validateAuthentication();
 }
 
@@ -1085,11 +1217,34 @@ function createRequestBody() {
     };
 
     if (methodKey === "file_upload") {
+        body.retrieval_type =
+            "file";
+
+        body.data_format =
+            null;
+
         body.file_extensions =
             getSelectedFileExtensions();
 
         return body;
     }
+
+    body.retrieval_type =
+        normalizeRetrievalType(
+            retrievalTypeSelect.value
+        );
+
+    body.data_format =
+        body.retrieval_type === "structured_data"
+            ? normalizeDataFormat(
+                dataFormatSelect.value
+            )
+            : null;
+
+    body.file_extensions =
+        body.retrieval_type === "file"
+            ? getSelectedFileExtensions()
+            : [];
 
     body.endpoint_url =
         endpointUrlInput.value.trim();
@@ -1231,6 +1386,12 @@ function resetScreen() {
     sourceTypeSelect.value =
         "";
 
+    retrievalTypeSelect.value =
+        "";
+
+    dataFormatSelect.value =
+        "";
+
     clearSelectedFileExtensions();
 
     mailExtensionsInput.value =
@@ -1305,6 +1466,44 @@ function normalizeSourceType(
     )
         .trim()
         .toLowerCase();
+}
+
+
+function normalizeRetrievalType(
+    retrievalType
+) {
+    return String(
+        retrievalType ||
+        ""
+    )
+        .trim()
+        .toLowerCase()
+        .replaceAll(
+            "-",
+            "_"
+        );
+}
+
+
+function normalizeDataFormat(
+    dataFormat
+) {
+    const normalizedDataFormat =
+        String(
+            dataFormat ||
+            ""
+        )
+            .trim()
+            .toLowerCase();
+
+    return [
+        "json",
+        "xml"
+    ].includes(
+        normalizedDataFormat
+    )
+        ? normalizedDataFormat
+        : "";
 }
 
 
