@@ -33,14 +33,6 @@ const sourceTypeSelect = document.getElementById(
     "sourceTypeSelect"
 );
 
-const dataFormatRow = document.getElementById(
-    "dataFormatRow"
-);
-
-const dataFormatSelect = document.getElementById(
-    "dataFormatSelect"
-);
-
 const fileSettings = document.getElementById(
     "fileSettings"
 );
@@ -140,6 +132,7 @@ const backButton = document.getElementById(
 
 let parameters = [];
 let availableFileTypes = [];
+let legacyDataFormat = "";
 
 
 document.addEventListener(
@@ -179,11 +172,6 @@ async function initialize() {
         authenticationMethodSelect.addEventListener(
             "change",
             handleAuthenticationMethodChanged
-        );
-
-        dataFormatSelect.addEventListener(
-            "change",
-            handleDataFormatChanged
         );
 
         addParameterButton.addEventListener(
@@ -504,13 +492,7 @@ function setDataSourceValues(
         normalizeSourceType(
             dataSource.source_type
         );
-
-    dataFormatSelect.value =
-        normalizeDataFormat(
-            dataSource.data_format
-        );
-
-    setSelectedFileExtensions(
+setSelectedFileExtensions(
         dataSource.file_extensions
     );
 
@@ -591,7 +573,6 @@ function setDataSourceValues(
 
     handleSourceTypeChanged();
     handleAuthenticationMethodChanged();
-    handleDataFormatChanged();
     renderParameters();
 }
 
@@ -611,17 +592,6 @@ function handleSourceTypeChanged() {
         sourceType === "api" ||
         sourceType === "url";
 
-    dataFormatRow.classList.toggle(
-        "hidden",
-        !isExternalSource ||
-        methodKey === "file_upload"
-    );
-
-    if (sourceType === "file") {
-        dataFormatSelect.value =
-            "file";
-    }
-
     httpMethodRow.classList.toggle(
         "hidden",
         !isExternalSource ||
@@ -629,30 +599,9 @@ function handleSourceTypeChanged() {
         methodKey === "file_upload"
     );
 
-    handleDataFormatChanged();
-}
-
-
-function handleDataFormatChanged() {
-    const sourceType =
-        normalizeSourceType(
-            sourceTypeSelect.value
-        );
-
-    const methodKey =
-        normalizeAuthenticationMethodKey(
-            authenticationMethodSelect.value
-        );
-
-    const dataFormat =
-        normalizeDataFormat(
-            dataFormatSelect.value
-        );
-
     const showFileExtensions =
         methodKey === "file_upload" ||
-        sourceType === "file" ||
-        dataFormat === "file";
+        sourceType === "file";
 
     fileSettings.classList.toggle(
         "hidden",
@@ -662,10 +611,6 @@ function handleDataFormatChanged() {
 
 
 function hideSourceSettings() {
-    dataFormatRow.classList.add(
-        "hidden"
-    );
-
     fileSettings.classList.add(
         "hidden"
     );
@@ -698,9 +643,6 @@ function handleAuthenticationMethodChanged() {
     }
 
     if (methodKey === "file_upload") {
-        dataFormatSelect.value =
-            "file";
-
         fileSettings.classList.remove(
             "hidden"
         );
@@ -1023,26 +965,6 @@ function validateInput() {
         );
     }
 
-    const dataFormat =
-        normalizeDataFormat(
-            dataFormatSelect.value
-        );
-
-    if (!dataFormat) {
-        return (
-            "データ形式を選択してください。"
-        );
-    }
-
-    if (
-        dataFormat === "file" &&
-        getSelectedFileExtensions().length === 0
-    ) {
-        return (
-            "対象拡張子を1つ以上選択してください。"
-        );
-    }
-
     return validateAuthentication();
 }
 
@@ -1168,9 +1090,6 @@ function createRequestBody() {
     };
 
     if (methodKey === "file_upload") {
-        body.retrieval_type =
-            "file";
-
         body.data_format =
             "file";
 
@@ -1181,19 +1100,11 @@ function createRequestBody() {
     }
 
     body.data_format =
-        normalizeDataFormat(
-            dataFormatSelect.value
-        );
-
-    body.retrieval_type =
-        body.data_format === "file"
-            ? "file"
-            : "structured_data";
+        legacyDataFormat ||
+        "json";
 
     body.file_extensions =
-        body.data_format === "file"
-            ? getSelectedFileExtensions()
-            : [];
+        [];
 
     body.endpoint_url =
         endpointUrlInput.value.trim();
@@ -1335,9 +1246,6 @@ function resetScreen() {
     sourceTypeSelect.value =
         "";
 
-    dataFormatSelect.value =
-        "";
-
     clearSelectedFileExtensions();
 
     mailExtensionsInput.value =
@@ -1380,6 +1288,7 @@ function resetScreen() {
         "";
 
     parameters = [];
+    legacyDataFormat = "";
 
     hideSourceSettings();
     hideAuthenticationFields();

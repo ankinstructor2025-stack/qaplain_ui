@@ -184,7 +184,7 @@ function createDataSourceRow(
             getDataSourceName(
                 dataSource
             ),
-            "19%"
+            "22%"
         )
     );
 
@@ -193,16 +193,7 @@ function createDataSourceRow(
             getSourceTypeLabel(
                 dataSource.source_type
             ),
-            "11%"
-        )
-    );
-
-    row.appendChild(
-        createTextColumn(
-            getDataFormatLabel(
-                dataSource
-            ),
-            "14%"
+            "13%"
         )
     );
 
@@ -211,7 +202,7 @@ function createDataSourceRow(
             getAuthenticationMethodLabel(
                 dataSource
             ),
-            "17%"
+            "19%"
         )
     );
 
@@ -220,7 +211,7 @@ function createDataSourceRow(
             getConnectionTarget(
                 dataSource
             ),
-            "22%"
+            "27%"
         )
     );
 
@@ -275,7 +266,7 @@ function createActionColumn(
         );
 
     column.style.width =
-        "10%";
+        "11%";
 
     column.className =
         "list-actions";
@@ -394,54 +385,6 @@ function getSourceTypeLabel(
         ""
     );
 
-}
-
-
-function getDataFormatLabel(
-    dataSource
-) {
-    const sourceType =
-        String(
-            dataSource.source_type || ""
-        )
-            .trim()
-            .toLowerCase();
-
-    if (sourceType === "file") {
-        return "ファイル";
-    }
-
-    const dataFormat =
-        String(
-            dataSource.data_format || ""
-        )
-            .trim()
-            .toLowerCase();
-
-    const labels = {
-        json: "JSON",
-        xml: "XML",
-        file: "ファイル"
-    };
-
-    if (labels[dataFormat]) {
-        return labels[dataFormat];
-    }
-
-    const retrievalType =
-        String(
-            dataSource.retrieval_type || ""
-        )
-            .trim()
-            .toLowerCase()
-            .replaceAll(
-                "-",
-                "_"
-            );
-
-    return retrievalType === "file"
-        ? "ファイル"
-        : "";
 }
 
 
