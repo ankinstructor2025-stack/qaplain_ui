@@ -153,6 +153,13 @@ let currentImportMethod =
   "";
 
 
+const TASK_POLL_INTERVAL_MS =
+  3000;
+
+const TASK_POLL_TIMEOUT_MS =
+  60 * 60 * 1000;
+
+
 function writeLog(
   message
 ) {
@@ -1068,6 +1075,195 @@ function bindDataImportResultEvent() {
 }
 
 
+function sleep(
+  milliseconds
+) {
+  return new Promise(
+    resolve => {
+      window.setTimeout(
+        resolve,
+        milliseconds
+      );
+    }
+  );
+}
+
+
+function normalizeTaskStatus(
+  value
+) {
+  return String(
+    value || ""
+  )
+    .trim()
+    .toLowerCase();
+}
+
+
+function formatTaskStatus(
+  value
+) {
+  switch (
+    normalizeTaskStatus(value)
+  ) {
+    case "queued":
+      return "待機中";
+
+    case "running":
+      return "取得中";
+
+    case "completed":
+      return "完了";
+
+    case "failed":
+    case "enqueue_failed":
+      return "エラー";
+
+    default:
+      return String(value || "");
+  }
+}
+
+
+async function getImportTask(
+  taskId
+) {
+  return await authenticatedJsonOrThrow(
+    `${API_BASE}/data-import/tasks/${
+      encodeURIComponent(taskId)
+    }`,
+    {
+      method: "GET",
+      cache: "no-store"
+    }
+  );
+}
+
+
+async function waitForImportTask({
+  taskId,
+  dataSource
+}) {
+  if (!taskId) {
+    throw new Error(
+      "取込タスクIDを取得できませんでした。"
+    );
+  }
+
+  const startedAt =
+    Date.now();
+
+  let lastStatus =
+    "";
+
+  while (true) {
+    const task =
+      await getImportTask(
+        taskId
+      );
+
+    const status =
+      normalizeTaskStatus(
+        task.status
+      );
+
+    if (status !== lastStatus) {
+      writeLog(
+        `タスク状態: ${
+          formatTaskStatus(status)
+        }`
+      );
+
+      lastStatus =
+        status;
+    }
+
+    if (status === "completed") {
+      writeLog(
+        "データ取得が完了しました。"
+      );
+
+      await loadImportedItems(
+        dataSource.data_source_id
+      );
+
+      return task;
+    }
+
+    if (
+      status === "failed" ||
+      status === "enqueue_failed"
+    ) {
+      throw new Error(
+        task.error_message ||
+        "データ取得タスクが失敗しました。"
+      );
+    }
+
+    if (
+      Date.now() - startedAt >
+      TASK_POLL_TIMEOUT_MS
+    ) {
+      throw new Error(
+        "データ取得の完了確認がタイムアウトしました。"
+      );
+    }
+
+    await sleep(
+      TASK_POLL_INTERVAL_MS
+    );
+  }
+}
+
+
+async function handleQueuedImportResult({
+  result,
+  dataSource
+}) {
+  if (!result?.task_id) {
+    throw new Error(
+      "データ取得タスクを受け付けられませんでした。"
+    );
+  }
+
+  writeLog(
+    `タスクID: ${result.task_id}`
+  );
+
+  writeLog(
+    `タスク状態: ${
+      formatTaskStatus(
+        result.status
+      )
+    }`
+  );
+
+  if (result.queue_id) {
+    writeLog(
+      `キュー: ${result.queue_id}`
+    );
+  }
+
+  if (
+    result.task_concurrency !== undefined &&
+    result.task_concurrency !== null
+  ) {
+    writeLog(
+      `並列数: ${result.task_concurrency}`
+    );
+  }
+
+  showApiImportMessage(
+    "データ取得を受け付けました。完了までお待ちください。"
+  );
+
+  return await waitForImportTask({
+    taskId: result.task_id,
+    dataSource
+  });
+}
+
+
 async function runSelectedDataImport() {
   try {
     if (currentImportMethod === "file_upload") {
@@ -1122,29 +1318,50 @@ async function runSelectedDataImport() {
           "ファイルアップロードではデータソースを使用しません。"
         );
 
-      case "none":
-        await runNoneImport({
-          idToken,
+      case "none": {
+        const result =
+          await runNoneImport({
+            idToken,
+            dataSource
+          });
+
+        await handleQueuedImportResult({
+          result,
           dataSource
         });
 
         return;
+      }
 
-      case "basic":
-        await runBasicImport({
-          idToken,
+      case "basic": {
+        const result =
+          await runBasicImport({
+            idToken,
+            dataSource
+          });
+
+        await handleQueuedImportResult({
+          result,
           dataSource
         });
 
         return;
+      }
 
-      case "client_credentials":
-        await runClientCredentialsImport({
-          idToken,
+      case "client_credentials": {
+        const result =
+          await runClientCredentialsImport({
+            idToken,
+            dataSource
+          });
+
+        await handleQueuedImportResult({
+          result,
           dataSource
         });
 
         return;
+      }
 
       default:
         throw new Error(
