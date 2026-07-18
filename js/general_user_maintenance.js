@@ -147,42 +147,51 @@ function renderUsers(users) {
         row.appendChild(
             createColumn(
                 user.user_name || "",
-                "18%"
+                "15%"
             )
         );
 
         row.appendChild(
             createColumn(
                 user.email || "",
-                "22%"
+                "19%"
+            )
+        );
+
+        row.appendChild(
+            createColumn(
+                user.tenant_name ||
+                user.tenant_id ||
+                "",
+                "14%"
             )
         );
 
         row.appendChild(
             createColumn(
                 user.parent_user || "",
-                "18%"
+                "15%"
             )
         );
 
         row.appendChild(
             createColumn(
                 user.user_type || "",
-                "10%"
+                "9%"
             )
         );
 
         row.appendChild(
             createColumn(
                 formatDate(user.start_date),
-                "11%"
+                "9%"
             )
         );
 
         row.appendChild(
             createColumn(
                 formatDate(user.end_date),
-                "11%"
+                "9%"
             )
         );
 
