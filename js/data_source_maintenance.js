@@ -23,6 +23,8 @@ const backButton =
         "backButton"
     );
 
+let tenantMap = {};
+
 
 document.addEventListener(
     "DOMContentLoaded",
@@ -67,6 +69,7 @@ async function initialize() {
             handleBack
         );
 
+        await loadTenants();
         await loadDataSources();
 
     } catch (error) {
@@ -85,6 +88,45 @@ async function initialize() {
             "./index.html";
 
     }
+
+}
+
+
+async function loadTenants() {
+
+    const result =
+        await authenticatedJsonOrThrow(
+            `${API_BASE_URL}/tenants`,
+            {
+                method: "GET"
+            }
+        );
+
+    const tenants =
+        Array.isArray(result)
+            ? result
+            : result.tenants || [];
+
+    tenantMap = {};
+
+    tenants.forEach(
+        tenant => {
+
+            const tenantId =
+                tenant.id ||
+                tenant.tenant_id ||
+                "";
+
+            if (!tenantId) {
+                return;
+            }
+
+            tenantMap[tenantId] =
+                tenant.tenant_name ||
+                tenantId;
+
+        }
+    );
 
 }
 
@@ -181,10 +223,19 @@ function createDataSourceRow(
 
     row.appendChild(
         createTextColumn(
+            getTenantName(
+                dataSource
+            ),
+            "18%"
+        )
+    );
+
+    row.appendChild(
+        createTextColumn(
             getDataSourceName(
                 dataSource
             ),
-            "22%"
+            "18%"
         )
     );
 
@@ -193,7 +244,7 @@ function createDataSourceRow(
             getSourceTypeLabel(
                 dataSource.source_type
             ),
-            "13%"
+            "10%"
         )
     );
 
@@ -202,7 +253,7 @@ function createDataSourceRow(
             getAuthenticationMethodLabel(
                 dataSource
             ),
-            "19%"
+            "17%"
         )
     );
 
@@ -211,7 +262,7 @@ function createDataSourceRow(
             getConnectionTarget(
                 dataSource
             ),
-            "27%"
+            "21%"
         )
     );
 
@@ -220,7 +271,7 @@ function createDataSourceRow(
             getEnabledLabel(
                 dataSource.enabled
             ),
-            "8%"
+            "6%"
         )
     );
 
@@ -266,7 +317,7 @@ function createActionColumn(
         );
 
     column.style.width =
-        "11%";
+        "10%";
 
     column.className =
         "list-actions";
@@ -326,6 +377,23 @@ function createActionColumn(
     );
 
     return column;
+
+}
+
+
+function getTenantName(
+    dataSource
+) {
+
+    const tenantId =
+        dataSource.tenant_id ||
+        "";
+
+    return (
+        dataSource.tenant_name ||
+        tenantMap[tenantId] ||
+        tenantId
+    );
 
 }
 

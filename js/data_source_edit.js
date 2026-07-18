@@ -25,6 +25,10 @@ const pageTitle = document.getElementById(
     "pageTitle"
 );
 
+const tenantSelect = document.getElementById(
+    "tenantSelect"
+);
+
 const dataSourceNameInput = document.getElementById(
     "dataSourceName"
 );
@@ -190,6 +194,7 @@ async function initialize() {
         );
 
         await Promise.all([
+            loadTenants(),
             loadAuthenticationMethods(),
             loadAvailableFileTypes()
         ]);
@@ -219,6 +224,62 @@ async function initialize() {
         location.href =
             "./data_source_maintenance.html";
     }
+}
+
+
+async function loadTenants() {
+    const result = await authenticatedJsonOrThrow(
+        `${API_BASE_URL}/tenants`,
+        {
+            method: "GET"
+        }
+    );
+
+    const tenants =
+        Array.isArray(result)
+            ? result
+            : result.tenants || [];
+
+    tenantSelect.innerHTML = "";
+
+    const placeholder = document.createElement(
+        "option"
+    );
+
+    placeholder.value = "";
+    placeholder.textContent =
+        "テナントを選択してください";
+
+    tenantSelect.appendChild(
+        placeholder
+    );
+
+    tenants.forEach(
+        tenant => {
+            const tenantId =
+                tenant.id ||
+                tenant.tenant_id ||
+                "";
+
+            if (!tenantId) {
+                return;
+            }
+
+            const option =
+                document.createElement(
+                    "option"
+                );
+
+            option.value = tenantId;
+            option.textContent =
+                tenant.tenant_name ||
+                tenantId;
+
+            tenantSelect.appendChild(
+                option
+            );
+        }
+    );
 }
 
 
@@ -483,6 +544,10 @@ async function loadDataSource() {
 function setDataSourceValues(
     dataSource
 ) {
+    tenantSelect.value =
+        dataSource.tenant_id ||
+        "";
+
     dataSourceNameInput.value =
         dataSource.data_source_name ||
         dataSource.name ||
@@ -919,6 +984,14 @@ function showParameterMessage(
 
 function validateInput() {
     if (
+        !tenantSelect.value.trim()
+    ) {
+        return (
+            "テナントを選択してください。"
+        );
+    }
+
+    if (
         !dataSourceNameInput.value.trim()
     ) {
         return (
@@ -1055,6 +1128,9 @@ function createRequestBody() {
         );
 
     const body = {
+        tenant_id:
+            tenantSelect.value,
+
         data_source_name:
             dataSourceNameInput.value.trim(),
 
@@ -1240,6 +1316,9 @@ async function handleSave() {
 
 
 function resetScreen() {
+    tenantSelect.value =
+        "";
+
     dataSourceNameInput.value =
         "";
 
