@@ -42,6 +42,11 @@ const endDateInput =
         "endDate"
     );
 
+const taskConcurrencyInput =
+    document.getElementById(
+        "taskConcurrency"
+    );
+
 const openaiApiKeyInput =
     document.getElementById(
         "openaiApiKey"
@@ -175,6 +180,9 @@ function initializeNewTenant() {
     startDateInput.readOnly =
         false;
 
+    taskConcurrencyInput.value =
+        "1";
+
     resetApiKeyVisibility();
 
 }
@@ -226,6 +234,11 @@ async function loadTenant() {
                 tenant.end_date
             );
 
+        taskConcurrencyInput.value =
+            String(
+                tenant.task_concurrency || 1
+            );
+
         openaiApiKeyInput.value =
             tenant.openai_api_key || "";
 
@@ -263,6 +276,11 @@ async function handleSave() {
 
         end_date:
             endDateInput.value || null,
+
+        task_concurrency:
+            Number(
+                taskConcurrencyInput.value
+            ),
 
         openai_api_key:
             openaiApiKeyInput.value.trim() || null,
@@ -384,6 +402,20 @@ function validateInput(
 
     }
 
+    if (
+        !Number.isInteger(
+            body.task_concurrency
+        )
+        || body.task_concurrency < 1
+        || body.task_concurrency > 10
+    ) {
+
+        return (
+            "TASKS並列数は1～10の整数で入力してください。"
+        );
+
+    }
+
     return "";
 
 }
@@ -451,6 +483,9 @@ function setButtonState(
         disabled;
 
     endDateInput.disabled =
+        disabled;
+
+    taskConcurrencyInput.disabled =
         disabled;
 
     openaiApiKeyInput.disabled =

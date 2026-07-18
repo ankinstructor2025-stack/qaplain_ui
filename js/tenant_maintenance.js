@@ -171,14 +171,23 @@ function renderTenants(
             row.appendChild(
                 createColumn(
                     tenant.tenant_name || "",
-                    "28%"
+                    "24%"
                 )
             );
 
             row.appendChild(
                 createColumn(
                     tenant.parent_user || "",
-                    "30%"
+                    "26%"
+                )
+            );
+
+            row.appendChild(
+                createColumn(
+                    String(
+                        tenant.task_concurrency || 1
+                    ),
+                    "12%"
                 )
             );
 
@@ -187,7 +196,7 @@ function renderTenants(
                     formatDate(
                         tenant.start_date
                     ),
-                    "14%"
+                    "12%"
                 )
             );
 
@@ -196,7 +205,7 @@ function renderTenants(
                     formatDate(
                         tenant.end_date
                     ),
-                    "14%"
+                    "12%"
                 )
             );
 
