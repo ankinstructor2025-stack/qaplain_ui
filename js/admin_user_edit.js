@@ -422,7 +422,7 @@ function validateInput(
         inputData.end_date
     ) {
         return (
-            "利用終了日は利用開始日以降の"
+            "利用終了日は利用開始日以降の" +
             "日付を入力してください。"
         );
     }
