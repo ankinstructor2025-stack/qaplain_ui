@@ -33,14 +33,6 @@ const sourceTypeSelect = document.getElementById(
     "sourceTypeSelect"
 );
 
-const retrievalTypeRow = document.getElementById(
-    "retrievalTypeRow"
-);
-
-const retrievalTypeSelect = document.getElementById(
-    "retrievalTypeSelect"
-);
-
 const dataFormatRow = document.getElementById(
     "dataFormatRow"
 );
@@ -189,9 +181,9 @@ async function initialize() {
             handleAuthenticationMethodChanged
         );
 
-        retrievalTypeSelect.addEventListener(
+        dataFormatSelect.addEventListener(
             "change",
-            handleRetrievalTypeChanged
+            handleDataFormatChanged
         );
 
         addParameterButton.addEventListener(
@@ -513,16 +505,6 @@ function setDataSourceValues(
             dataSource.source_type
         );
 
-    retrievalTypeSelect.value =
-        normalizeRetrievalType(
-            dataSource.retrieval_type ||
-            (
-                dataSource.source_type === "file"
-                    ? "file"
-                    : ""
-            )
-        );
-
     dataFormatSelect.value =
         normalizeDataFormat(
             dataSource.data_format
@@ -609,7 +591,7 @@ function setDataSourceValues(
 
     handleSourceTypeChanged();
     handleAuthenticationMethodChanged();
-    handleRetrievalTypeChanged();
+    handleDataFormatChanged();
     renderParameters();
 }
 
@@ -629,17 +611,15 @@ function handleSourceTypeChanged() {
         sourceType === "api" ||
         sourceType === "url";
 
-    retrievalTypeRow.classList.toggle(
+    dataFormatRow.classList.toggle(
         "hidden",
         !isExternalSource ||
         methodKey === "file_upload"
     );
 
-    if (!isExternalSource) {
-        retrievalTypeSelect.value =
-            sourceType === "file"
-                ? "file"
-                : "";
+    if (sourceType === "file") {
+        dataFormatSelect.value =
+            "file";
     }
 
     httpMethodRow.classList.toggle(
@@ -649,11 +629,11 @@ function handleSourceTypeChanged() {
         methodKey === "file_upload"
     );
 
-    handleRetrievalTypeChanged();
+    handleDataFormatChanged();
 }
 
 
-function handleRetrievalTypeChanged() {
+function handleDataFormatChanged() {
     const sourceType =
         normalizeSourceType(
             sourceTypeSelect.value
@@ -664,34 +644,24 @@ function handleRetrievalTypeChanged() {
             authenticationMethodSelect.value
         );
 
-    const retrievalType =
-        normalizeRetrievalType(
-            retrievalTypeSelect.value
+    const dataFormat =
+        normalizeDataFormat(
+            dataFormatSelect.value
         );
 
-    const isFileUpload =
+    const showFileExtensions =
         methodKey === "file_upload" ||
-        sourceType === "file";
-
-    dataFormatRow.classList.toggle(
-        "hidden",
-        isFileUpload ||
-        retrievalType !== "structured_data"
-    );
+        sourceType === "file" ||
+        dataFormat === "file";
 
     fileSettings.classList.toggle(
         "hidden",
-        !isFileUpload &&
-        retrievalType !== "file"
+        !showFileExtensions
     );
 }
 
 
 function hideSourceSettings() {
-    retrievalTypeRow.classList.add(
-        "hidden"
-    );
-
     dataFormatRow.classList.add(
         "hidden"
     );
@@ -728,7 +698,7 @@ function handleAuthenticationMethodChanged() {
     }
 
     if (methodKey === "file_upload") {
-        retrievalTypeSelect.value =
+        dataFormatSelect.value =
             "file";
 
         fileSettings.classList.remove(
@@ -1053,32 +1023,19 @@ function validateInput() {
         );
     }
 
-    const retrievalType =
-        normalizeRetrievalType(
-            retrievalTypeSelect.value
+    const dataFormat =
+        normalizeDataFormat(
+            dataFormatSelect.value
         );
 
-    if (!retrievalType) {
+    if (!dataFormat) {
         return (
-            "取得方式を選択してください。"
+            "データ形式を選択してください。"
         );
-    }
-
-    if (retrievalType === "structured_data") {
-        const dataFormat =
-            normalizeDataFormat(
-                dataFormatSelect.value
-            );
-
-        if (!dataFormat) {
-            return (
-                "データ形式を選択してください。"
-            );
-        }
     }
 
     if (
-        retrievalType === "file" &&
+        dataFormat === "file" &&
         getSelectedFileExtensions().length === 0
     ) {
         return (
@@ -1215,7 +1172,7 @@ function createRequestBody() {
             "file";
 
         body.data_format =
-            null;
+            "file";
 
         body.file_extensions =
             getSelectedFileExtensions();
@@ -1223,20 +1180,18 @@ function createRequestBody() {
         return body;
     }
 
-    body.retrieval_type =
-        normalizeRetrievalType(
-            retrievalTypeSelect.value
+    body.data_format =
+        normalizeDataFormat(
+            dataFormatSelect.value
         );
 
-    body.data_format =
-        body.retrieval_type === "structured_data"
-            ? normalizeDataFormat(
-                dataFormatSelect.value
-            )
-            : null;
+    body.retrieval_type =
+        body.data_format === "file"
+            ? "file"
+            : "structured_data";
 
     body.file_extensions =
-        body.retrieval_type === "file"
+        body.data_format === "file"
             ? getSelectedFileExtensions()
             : [];
 
@@ -1380,9 +1335,6 @@ function resetScreen() {
     sourceTypeSelect.value =
         "";
 
-    retrievalTypeSelect.value =
-        "";
-
     dataFormatSelect.value =
         "";
 
@@ -1463,22 +1415,6 @@ function normalizeSourceType(
 }
 
 
-function normalizeRetrievalType(
-    retrievalType
-) {
-    return String(
-        retrievalType ||
-        ""
-    )
-        .trim()
-        .toLowerCase()
-        .replaceAll(
-            "-",
-            "_"
-        );
-}
-
-
 function normalizeDataFormat(
     dataFormat
 ) {
@@ -1492,7 +1428,8 @@ function normalizeDataFormat(
 
     return [
         "json",
-        "xml"
+        "xml",
+        "file"
     ].includes(
         normalizedDataFormat
     )

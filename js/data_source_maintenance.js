@@ -199,7 +199,7 @@ function createDataSourceRow(
 
     row.appendChild(
         createTextColumn(
-            getRetrievalTypeLabel(
+            getDataFormatLabel(
                 dataSource
             ),
             "14%"
@@ -397,17 +397,40 @@ function getSourceTypeLabel(
 }
 
 
-function getRetrievalTypeLabel(
+function getDataFormatLabel(
     dataSource
 ) {
+    const sourceType =
+        String(
+            dataSource.source_type || ""
+        )
+            .trim()
+            .toLowerCase();
+
+    if (sourceType === "file") {
+        return "ファイル";
+    }
+
+    const dataFormat =
+        String(
+            dataSource.data_format || ""
+        )
+            .trim()
+            .toLowerCase();
+
+    const labels = {
+        json: "JSON",
+        xml: "XML",
+        file: "ファイル"
+    };
+
+    if (labels[dataFormat]) {
+        return labels[dataFormat];
+    }
+
     const retrievalType =
         String(
-            dataSource.retrieval_type ||
-            (
-                dataSource.source_type === "file"
-                    ? "file"
-                    : ""
-            )
+            dataSource.retrieval_type || ""
         )
             .trim()
             .toLowerCase()
@@ -416,24 +439,9 @@ function getRetrievalTypeLabel(
                 "_"
             );
 
-    if (retrievalType === "structured_data") {
-        const dataFormat =
-            String(
-                dataSource.data_format ||
-                ""
-            )
-                .trim()
-                .toUpperCase();
-
-        return dataFormat ||
-            "JSON／XMLデータ";
-    }
-
-    if (retrievalType === "file") {
-        return "ファイル";
-    }
-
-    return "";
+    return retrievalType === "file"
+        ? "ファイル"
+        : "";
 }
 
 
