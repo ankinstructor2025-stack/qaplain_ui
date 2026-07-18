@@ -116,36 +116,61 @@ function renderUsers(users) {
   }
 
   users.forEach((user) => {
-    const row = document.createElement("div");
+    const row =
+      document.createElement("div");
+
     row.className = "list-row";
 
     row.appendChild(
-      createColumn(user.user_name || "", "22%")
-    );
-
-    row.appendChild(
-      createColumn(user.email || "", "32%")
-    );
-
-    row.appendChild(
       createColumn(
-        formatDate(user.start_date),
-        "16%"
+        user.user_name || "",
+        "18%"
       )
     );
 
     row.appendChild(
       createColumn(
-        formatDate(user.end_date),
-        "16%"
+        user.email || "",
+        "26%"
       )
     );
 
     row.appendChild(
-      createActionColumn(user)
+      createColumn(
+        user.tenant_name ||
+        user.tenant_id ||
+        "",
+        "18%"
+      )
     );
 
-    adminUserList.appendChild(row);
+    row.appendChild(
+      createColumn(
+        formatDate(
+          user.start_date
+        ),
+        "14%"
+      )
+    );
+
+    row.appendChild(
+      createColumn(
+        formatDate(
+          user.end_date
+        ),
+        "14%"
+      )
+    );
+
+    row.appendChild(
+      createActionColumn(
+        user
+      )
+    );
+
+    adminUserList.appendChild(
+      row
+    );
   });
 }
 
@@ -161,7 +186,7 @@ function createColumn(value, width) {
 function createActionColumn(user) {
   const column = document.createElement("div");
 
-  column.style.width = "14%";
+  column.style.width = "10%";
   column.className = "list-row-actions";
 
   const editButton =
