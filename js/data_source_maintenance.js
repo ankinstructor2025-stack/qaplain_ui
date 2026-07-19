@@ -226,7 +226,7 @@ function createDataSourceRow(
             getTenantName(
                 dataSource
             ),
-            "18%"
+            "14%"
         )
     );
 
@@ -235,7 +235,7 @@ function createDataSourceRow(
             getDataSourceName(
                 dataSource
             ),
-            "18%"
+            "16%"
         )
     );
 
@@ -244,7 +244,16 @@ function createDataSourceRow(
             getSourceTypeLabel(
                 dataSource.source_type
             ),
-            "10%"
+            "9%"
+        )
+    );
+
+    row.appendChild(
+        createTextColumn(
+            getProcessingPatternLabel(
+                dataSource.processing_pattern
+            ),
+            "13%"
         )
     );
 
@@ -253,7 +262,7 @@ function createDataSourceRow(
             getAuthenticationMethodLabel(
                 dataSource
             ),
-            "17%"
+            "15%"
         )
     );
 
@@ -262,7 +271,7 @@ function createDataSourceRow(
             getConnectionTarget(
                 dataSource
             ),
-            "21%"
+            "18%"
         )
     );
 
@@ -271,7 +280,7 @@ function createDataSourceRow(
             getEnabledLabel(
                 dataSource.enabled
             ),
-            "6%"
+            "5%"
         )
     );
 
@@ -451,6 +460,43 @@ function getSourceTypeLabel(
         labels[normalizedSourceType] ||
         sourceType ||
         ""
+    );
+
+}
+
+
+function getProcessingPatternLabel(
+    processingPattern
+) {
+
+    const normalizedPattern =
+        String(
+            processingPattern || "raw"
+        )
+            .trim()
+            .toLowerCase()
+            .replaceAll(
+                "-",
+                "_"
+            );
+
+    const labels = {
+        raw:
+            "原文保存",
+        json_list:
+            "一覧展開",
+        parent_child:
+            "親子展開",
+        parent_child_grandchild:
+            "親子孫展開",
+        file_links:
+            "リンク先取得"
+    };
+
+    return (
+        labels[normalizedPattern] ||
+        normalizedPattern ||
+        "原文保存"
     );
 
 }

@@ -37,6 +37,12 @@ const sourceTypeSelect = document.getElementById(
     "sourceTypeSelect"
 );
 
+
+const processingPatternSelect =
+    document.getElementById(
+        "processingPattern"
+    );
+
 const fileSettings = document.getElementById(
     "fileSettings"
 );
@@ -557,7 +563,13 @@ function setDataSourceValues(
         normalizeSourceType(
             dataSource.source_type
         );
-setSelectedFileExtensions(
+
+    processingPatternSelect.value =
+        normalizeProcessingPattern(
+            dataSource.processing_pattern
+        );
+
+    setSelectedFileExtensions(
         dataSource.file_extensions
     );
 
@@ -1007,6 +1019,14 @@ function validateInput() {
         );
     }
 
+    if (
+        !processingPatternSelect.value.trim()
+    ) {
+        return (
+            "処理方式を選択してください。"
+        );
+    }
+
     const methodKey =
         normalizeAuthenticationMethodKey(
             authenticationMethodSelect.value
@@ -1137,6 +1157,11 @@ function createRequestBody() {
         source_type:
             sourceTypeSelect.value,
 
+        processing_pattern:
+            normalizeProcessingPattern(
+                processingPatternSelect.value
+            ),
+
         authentication_method_key:
             methodKey,
 
@@ -1166,6 +1191,9 @@ function createRequestBody() {
     };
 
     if (methodKey === "file_upload") {
+        body.processing_pattern =
+            "raw";
+
         body.data_format =
             "file";
 
@@ -1325,6 +1353,9 @@ function resetScreen() {
     sourceTypeSelect.value =
         "";
 
+    processingPatternSelect.value =
+        "raw";
+
     clearSelectedFileExtensions();
 
     mailExtensionsInput.value =
@@ -1423,6 +1454,38 @@ function normalizeDataFormat(
     )
         ? normalizedDataFormat
         : "";
+}
+
+
+function normalizeProcessingPattern(
+    processingPattern
+) {
+
+    const normalizedPattern =
+        String(
+            processingPattern ||
+            "raw"
+        )
+            .trim()
+            .toLowerCase()
+            .replaceAll(
+                "-",
+                "_"
+            );
+
+    const allowedPatterns = [
+        "raw",
+        "json_list",
+        "parent_child",
+        "parent_child_grandchild",
+        "file_links"
+    ];
+
+    return allowedPatterns.includes(
+        normalizedPattern
+    )
+        ? normalizedPattern
+        : "raw";
 }
 
 
