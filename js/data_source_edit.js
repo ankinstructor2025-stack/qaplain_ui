@@ -68,6 +68,16 @@ const fileLinkSettings =
         "fileLinkSettings"
     );
 
+
+const listArrayPathInput = document.getElementById("listArrayPath");
+const parentArrayPathInput = document.getElementById("parentArrayPath");
+const childArrayPathInput = document.getElementById("childArrayPath");
+const grandParentArrayPathInput = document.getElementById("grandParentArrayPath");
+const grandChildArrayPathInput = document.getElementById("grandChildArrayPath");
+const grandchildArrayPathInput = document.getElementById("grandchildArrayPath");
+const fileLinkArrayPathInput = document.getElementById("fileLinkArrayPath");
+const fileLinkFieldNameInput = document.getElementById("fileLinkFieldName");
+
 const fileSettings = document.getElementById(
     "fileSettings"
 );
@@ -600,6 +610,15 @@ function setDataSourceValues(
         );
 
     handleProcessingPatternChanged();
+
+    listArrayPathInput.value=dataSource.list_array_path||"";
+    parentArrayPathInput.value=dataSource.parent_array_path||"";
+    childArrayPathInput.value=dataSource.child_array_path||"";
+    grandParentArrayPathInput.value=dataSource.parent_array_path||"";
+    grandChildArrayPathInput.value=dataSource.child_array_path||"";
+    grandchildArrayPathInput.value=dataSource.grandchild_array_path||"";
+    fileLinkArrayPathInput.value=dataSource.file_link_array_path||"";
+    fileLinkFieldNameInput.value=dataSource.file_link_field_name||"";
 
     setSelectedFileExtensions(
         dataSource.file_extensions
@@ -1159,6 +1178,25 @@ function validateInput() {
         );
     }
 
+    
+    switch(normalizeProcessingPattern(processingPatternSelect.value)){
+        case "json_list":
+            if(!listArrayPathInput.value.trim()) return "一覧配列を入力してください。";
+            break;
+        case "parent_child":
+            if(!parentArrayPathInput.value.trim()) return "親配列を入力してください。";
+            if(!childArrayPathInput.value.trim()) return "子配列を入力してください。";
+            break;
+        case "parent_child_grandchild":
+            if(!grandParentArrayPathInput.value.trim()) return "親配列を入力してください。";
+            if(!grandChildArrayPathInput.value.trim()) return "子配列を入力してください。";
+            if(!grandchildArrayPathInput.value.trim()) return "孫配列を入力してください。";
+            break;
+        case "file_links":
+            if(!fileLinkArrayPathInput.value.trim()) return "一覧配列を入力してください。";
+            if(!fileLinkFieldNameInput.value.trim()) return "ファイルURL項目を入力してください。";
+            break;
+    }
     return validateAuthentication();
 }
 
@@ -1324,6 +1362,13 @@ function createRequestBody() {
         createAuthenticationRequest()
     );
 
+    body.list_array_path=listArrayPathInput.value.trim();
+    body.parent_array_path=parentArrayPathInput.value.trim()||grandParentArrayPathInput.value.trim();
+    body.child_array_path=childArrayPathInput.value.trim()||grandChildArrayPathInput.value.trim();
+    body.grandchild_array_path=grandchildArrayPathInput.value.trim();
+    body.file_link_array_path=fileLinkArrayPathInput.value.trim();
+    body.file_link_field_name=fileLinkFieldNameInput.value.trim();
+
     return body;
 }
 
@@ -1458,6 +1503,15 @@ function resetScreen() {
         "raw";
 
     handleProcessingPatternChanged();
+    listArrayPathInput.value="";
+    parentArrayPathInput.value="";
+    childArrayPathInput.value="";
+    grandParentArrayPathInput.value="";
+    grandChildArrayPathInput.value="";
+    grandchildArrayPathInput.value="";
+    fileLinkArrayPathInput.value="";
+    fileLinkFieldNameInput.value="";
+
 
     clearSelectedFileExtensions();
 
