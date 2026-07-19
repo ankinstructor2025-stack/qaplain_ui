@@ -1661,3 +1661,70 @@ function handleBack() {
     location.href =
         "./data_source_maintenance.html";
 }
+
+// ===== Processing Pattern Support =====
+
+const listArrayPathInput = document.getElementById("listArrayPath");
+const parentArrayPathInput = document.getElementById("parentArrayPath");
+const childArrayPathInput = document.getElementById("childArrayPath");
+const grandParentArrayPathInput = document.getElementById("grandParentArrayPath");
+const grandChildArrayPathInput = document.getElementById("grandChildArrayPath");
+const grandchildArrayPathInput = document.getElementById("grandchildArrayPath");
+const fileLinkArrayPathInput = document.getElementById("fileLinkArrayPath");
+const fileLinkFieldNameInput = document.getElementById("fileLinkFieldName");
+
+/*
+修正箇所
+
+1. setDataSourceValues()
+
+listArrayPathInput.value=dataSource.list_array_path||"";
+parentArrayPathInput.value=dataSource.parent_array_path||"";
+childArrayPathInput.value=dataSource.child_array_path||"";
+grandParentArrayPathInput.value=dataSource.parent_array_path||"";
+grandChildArrayPathInput.value=dataSource.child_array_path||"";
+grandchildArrayPathInput.value=dataSource.grandchild_array_path||"";
+fileLinkArrayPathInput.value=dataSource.file_link_array_path||"";
+fileLinkFieldNameInput.value=dataSource.file_link_field_name||"";
+
+2. resetScreen()
+
+上記8項目をすべて "" にする
+
+3. validateInput()
+
+switch(normalizeProcessingPattern(processingPatternSelect.value)){
+case "json_list":
+ if(!listArrayPathInput.value.trim()) return "一覧配列を入力してください。";
+ break;
+
+case "parent_child":
+ if(!parentArrayPathInput.value.trim()) return "親配列を入力してください。";
+ if(!childArrayPathInput.value.trim()) return "子配列を入力してください。";
+ break;
+
+case "parent_child_grandchild":
+ if(!grandParentArrayPathInput.value.trim()) return "親配列を入力してください。";
+ if(!grandChildArrayPathInput.value.trim()) return "子配列を入力してください。";
+ if(!grandchildArrayPathInput.value.trim()) return "孫配列を入力してください。";
+ break;
+
+case "file_links":
+ if(!fileLinkArrayPathInput.value.trim()) return "一覧配列を入力してください。";
+ if(!fileLinkFieldNameInput.value.trim()) return "ファイルURL項目を入力してください。";
+ break;
+}
+
+4. createRequestBody()
+
+body.list_array_path=listArrayPathInput.value.trim();
+body.parent_array_path=parentArrayPathInput.value.trim()||grandParentArrayPathInput.value.trim();
+body.child_array_path=childArrayPathInput.value.trim()||grandChildArrayPathInput.value.trim();
+body.grandchild_array_path=grandchildArrayPathInput.value.trim();
+body.file_link_array_path=fileLinkArrayPathInput.value.trim();
+body.file_link_field_name=fileLinkFieldNameInput.value.trim();
+
+5. handleProcessingPatternChanged()
+
+非表示にした入力欄は value="" にする
+*/
