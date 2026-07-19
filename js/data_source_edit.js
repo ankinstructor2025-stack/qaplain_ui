@@ -43,6 +43,31 @@ const processingPatternSelect =
         "processingPattern"
     );
 
+const processingPatternSettings =
+    document.getElementById(
+        "processingPatternSettings"
+    );
+
+const jsonListSettings =
+    document.getElementById(
+        "jsonListSettings"
+    );
+
+const parentChildSettings =
+    document.getElementById(
+        "parentChildSettings"
+    );
+
+const parentChildGrandchildSettings =
+    document.getElementById(
+        "parentChildGrandchildSettings"
+    );
+
+const fileLinkSettings =
+    document.getElementById(
+        "fileLinkSettings"
+    );
+
 const fileSettings = document.getElementById(
     "fileSettings"
 );
@@ -177,6 +202,11 @@ async function initialize() {
                 handleSourceTypeChanged();
                 handleAuthenticationMethodChanged();
             }
+        );
+
+        processingPatternSelect.addEventListener(
+            "change",
+            handleProcessingPatternChanged
         );
 
         authenticationMethodSelect.addEventListener(
@@ -569,6 +599,8 @@ function setDataSourceValues(
             dataSource.processing_pattern
         );
 
+    handleProcessingPatternChanged();
+
     setSelectedFileExtensions(
         dataSource.file_extensions
     );
@@ -651,6 +683,75 @@ function setDataSourceValues(
     handleSourceTypeChanged();
     handleAuthenticationMethodChanged();
     renderParameters();
+}
+
+
+function handleProcessingPatternChanged() {
+    const processingPattern =
+        normalizeProcessingPattern(
+            processingPatternSelect.value
+        );
+
+    processingPatternSettings.classList.add(
+        "hidden"
+    );
+
+    jsonListSettings.classList.add(
+        "hidden"
+    );
+
+    parentChildSettings.classList.add(
+        "hidden"
+    );
+
+    parentChildGrandchildSettings.classList.add(
+        "hidden"
+    );
+
+    fileLinkSettings.classList.add(
+        "hidden"
+    );
+
+    if (processingPattern === "raw") {
+        return;
+    }
+
+    processingPatternSettings.classList.remove(
+        "hidden"
+    );
+
+    if (processingPattern === "json_list") {
+        jsonListSettings.classList.remove(
+            "hidden"
+        );
+
+        return;
+    }
+
+    if (processingPattern === "parent_child") {
+        parentChildSettings.classList.remove(
+            "hidden"
+        );
+
+        return;
+    }
+
+    if (
+        processingPattern ===
+        "parent_child_grandchild"
+    ) {
+        parentChildGrandchildSettings.classList.remove(
+            "hidden"
+        );
+
+        return;
+    }
+
+    if (processingPattern === "file_links") {
+        fileLinkSettings.classList.remove(
+            "hidden"
+        );
+    }
 }
 
 
@@ -1355,6 +1456,8 @@ function resetScreen() {
 
     processingPatternSelect.value =
         "raw";
+
+    handleProcessingPatternChanged();
 
     clearSelectedFileExtensions();
 
