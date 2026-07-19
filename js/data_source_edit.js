@@ -711,65 +711,54 @@ function handleProcessingPatternChanged() {
             processingPatternSelect.value
         );
 
-    processingPatternSettings.classList.add(
-        "hidden"
-    );
+    processingPatternSettings.classList.add("hidden");
+    jsonListSettings.classList.add("hidden");
+    parentChildSettings.classList.add("hidden");
+    parentChildGrandchildSettings.classList.add("hidden");
+    fileLinkSettings.classList.add("hidden");
 
-    jsonListSettings.classList.add(
-        "hidden"
-    );
+    if (processingPattern !== "json_list") {
+        listArrayPathInput.value = "";
+    }
 
-    parentChildSettings.classList.add(
-        "hidden"
-    );
+    if (processingPattern !== "parent_child") {
+        parentArrayPathInput.value = "";
+        childArrayPathInput.value = "";
+    }
 
-    parentChildGrandchildSettings.classList.add(
-        "hidden"
-    );
+    if (processingPattern !== "parent_child_grandchild") {
+        grandParentArrayPathInput.value = "";
+        grandChildArrayPathInput.value = "";
+        grandchildArrayPathInput.value = "";
+    }
 
-    fileLinkSettings.classList.add(
-        "hidden"
-    );
+    if (processingPattern !== "file_links") {
+        fileLinkArrayPathInput.value = "";
+        fileLinkFieldNameInput.value = "";
+    }
 
     if (processingPattern === "raw") {
         return;
     }
 
-    processingPatternSettings.classList.remove(
-        "hidden"
-    );
+    processingPatternSettings.classList.remove("hidden");
 
-    if (processingPattern === "json_list") {
-        jsonListSettings.classList.remove(
-            "hidden"
-        );
+    switch (processingPattern) {
+        case "json_list":
+            jsonListSettings.classList.remove("hidden");
+            break;
 
-        return;
-    }
+        case "parent_child":
+            parentChildSettings.classList.remove("hidden");
+            break;
 
-    if (processingPattern === "parent_child") {
-        parentChildSettings.classList.remove(
-            "hidden"
-        );
+        case "parent_child_grandchild":
+            parentChildGrandchildSettings.classList.remove("hidden");
+            break;
 
-        return;
-    }
-
-    if (
-        processingPattern ===
-        "parent_child_grandchild"
-    ) {
-        parentChildGrandchildSettings.classList.remove(
-            "hidden"
-        );
-
-        return;
-    }
-
-    if (processingPattern === "file_links") {
-        fileLinkSettings.classList.remove(
-            "hidden"
-        );
+        case "file_links":
+            fileLinkSettings.classList.remove("hidden");
+            break;
     }
 }
 
