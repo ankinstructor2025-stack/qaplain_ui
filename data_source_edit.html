@@ -123,6 +123,40 @@
 
             </div>
 
+            <div class="form-row">
+
+                <label for="processingPattern">
+                    処理方式
+                </label>
+
+                <select
+                    id="processingPattern"
+                    class="input">
+
+                    <option value="raw">
+                        原文保存
+                    </option>
+
+                    <option value="json_list">
+                        一覧展開
+                    </option>
+
+                    <option value="parent_child">
+                        親子展開
+                    </option>
+
+                    <option value="parent_child_grandchild">
+                        親子孫展開
+                    </option>
+
+                    <option value="file_links">
+                        リンク先ファイル取得
+                    </option>
+
+                </select>
+
+            </div>
+
             <div
                 id="fileSettings"
                 class="hidden">
