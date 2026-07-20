@@ -532,13 +532,6 @@ async function loadDetail(itemId) {
   selectedItemId = normalizeText(item.item_id);
   detailTitle.textContent = getFileName(item);
 
-  if (normalizeText(item.item_type) === "parent") {
-    renderParentInformation(
-      result?.parent_display_values
-    );
-  } else {
-    }
-
   if (result?.content_json !== null && result?.content_json !== undefined) {
     detailPre.textContent = JSON.stringify(result.content_json, null, 2);
   } else if (result?.content_available) {
