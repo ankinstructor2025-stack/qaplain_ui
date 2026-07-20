@@ -35,6 +35,8 @@ const childTableBody = document.getElementById("childTableBody");
 const detailTitle = document.getElementById("detailTitle");
 const detailPre = document.getElementById("detailPre");
 
+let parentInformationPanel = null;
+
 let firebaseUser = null;
 let sourceMap = {};
 let currentDataSource = null;
@@ -190,6 +192,104 @@ function renderPlaceholder(tbody, message, columnCount) {
 }
 
 
+function ensureParentInformationPanel() {
+  if (parentInformationPanel) {
+    return parentInformationPanel;
+  }
+
+  parentInformationPanel = document.createElement("div");
+  parentInformationPanel.id = "parentInformationPanel";
+  parentInformationPanel.className = "hidden";
+  parentInformationPanel.style.margin = "0 0 12px";
+  parentInformationPanel.style.padding = "10px 12px";
+  parentInformationPanel.style.borderRadius = "8px";
+  parentInformationPanel.style.background = "#ffffff";
+  parentInformationPanel.style.color = "#0b1b36";
+  parentInformationPanel.style.display = "flex";
+  parentInformationPanel.style.flexWrap = "wrap";
+  parentInformationPanel.style.gap = "8px 20px";
+  parentInformationPanel.style.alignItems = "center";
+
+  const targetSection =
+    relationListSection ||
+    flatListSection ||
+    detailTitle?.parentElement;
+
+  if (targetSection?.parentElement) {
+    targetSection.parentElement.insertBefore(
+      parentInformationPanel,
+      targetSection
+    );
+  }
+
+  return parentInformationPanel;
+}
+
+
+function formatParentInformationValue(value) {
+  if (value === null || value === undefined || value === "") {
+    return "-";
+  }
+
+  if (typeof value === "object") {
+    return JSON.stringify(value);
+  }
+
+  return String(value);
+}
+
+
+function clearParentInformation() {
+  const panel = ensureParentInformationPanel();
+  panel.innerHTML = "";
+  panel.classList.add("hidden");
+  panel.style.display = "none";
+}
+
+
+function renderParentInformation(displayValues) {
+  const panel = ensureParentInformationPanel();
+  const values = Array.isArray(displayValues)
+    ? displayValues
+    : [];
+
+  panel.innerHTML = "";
+
+  if (values.length === 0) {
+    panel.classList.add("hidden");
+    panel.style.display = "none";
+    return;
+  }
+
+  values.forEach(field => {
+    const item = document.createElement("div");
+    item.style.display = "inline-flex";
+    item.style.alignItems = "baseline";
+    item.style.gap = "8px";
+    item.style.minWidth = "180px";
+
+    const label = document.createElement("span");
+    label.style.fontSize = "12px";
+    label.style.color = "#58708f";
+    label.textContent = normalizeText(field?.label) || "項目";
+
+    const value = document.createElement("strong");
+    value.style.fontSize = "14px";
+    value.style.color = "#0b1b36";
+    value.textContent = formatParentInformationValue(
+      field?.value
+    );
+
+    item.appendChild(label);
+    item.appendChild(value);
+    panel.appendChild(item);
+  });
+
+  panel.classList.remove("hidden");
+  panel.style.display = "flex";
+}
+
+
 function clearDetail() {
   selectedItemId = "";
   detailTitle.textContent = "ファイルを選択してください。";
@@ -197,6 +297,7 @@ function clearDetail() {
   btnDownload.disabled = true;
   sourceUrlLink.classList.add("hidden");
   sourceUrlLink.removeAttribute("href");
+  clearParentInformation();
 }
 
 
@@ -450,6 +551,14 @@ async function loadDetail(itemId) {
   const item = result?.item || {};
   selectedItemId = normalizeText(item.item_id);
   detailTitle.textContent = getFileName(item);
+
+  if (normalizeText(item.item_type) === "parent") {
+    renderParentInformation(
+      result?.parent_display_values
+    );
+  } else {
+    clearParentInformation();
+  }
 
   if (result?.content_json !== null && result?.content_json !== undefined) {
     detailPre.textContent = JSON.stringify(result.content_json, null, 2);
