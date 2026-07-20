@@ -35,7 +35,7 @@ const childTableBody = document.getElementById("childTableBody");
 const detailTitle = document.getElementById("detailTitle");
 const detailPre = document.getElementById("detailPre");
 
-let parentInformationPanel = null;
+let parentDisplayFields = [];
 
 let firebaseUser = null;
 let sourceMap = {};
@@ -192,104 +192,6 @@ function renderPlaceholder(tbody, message, columnCount) {
 }
 
 
-function ensureParentInformationPanel() {
-  if (parentInformationPanel) {
-    return parentInformationPanel;
-  }
-
-  parentInformationPanel = document.createElement("div");
-  parentInformationPanel.id = "parentInformationPanel";
-  parentInformationPanel.className = "hidden";
-  parentInformationPanel.style.margin = "0 0 12px";
-  parentInformationPanel.style.padding = "10px 12px";
-  parentInformationPanel.style.borderRadius = "8px";
-  parentInformationPanel.style.background = "#ffffff";
-  parentInformationPanel.style.color = "#0b1b36";
-  parentInformationPanel.style.display = "flex";
-  parentInformationPanel.style.flexWrap = "wrap";
-  parentInformationPanel.style.gap = "8px 20px";
-  parentInformationPanel.style.alignItems = "center";
-
-  const targetSection =
-    relationListSection ||
-    flatListSection ||
-    detailTitle?.parentElement;
-
-  if (targetSection?.parentElement) {
-    targetSection.parentElement.insertBefore(
-      parentInformationPanel,
-      targetSection
-    );
-  }
-
-  return parentInformationPanel;
-}
-
-
-function formatParentInformationValue(value) {
-  if (value === null || value === undefined || value === "") {
-    return "-";
-  }
-
-  if (typeof value === "object") {
-    return JSON.stringify(value);
-  }
-
-  return String(value);
-}
-
-
-function clearParentInformation() {
-  const panel = ensureParentInformationPanel();
-  panel.innerHTML = "";
-  panel.classList.add("hidden");
-  panel.style.display = "none";
-}
-
-
-function renderParentInformation(displayValues) {
-  const panel = ensureParentInformationPanel();
-  const values = Array.isArray(displayValues)
-    ? displayValues
-    : [];
-
-  panel.innerHTML = "";
-
-  if (values.length === 0) {
-    panel.classList.add("hidden");
-    panel.style.display = "none";
-    return;
-  }
-
-  values.forEach(field => {
-    const item = document.createElement("div");
-    item.style.display = "inline-flex";
-    item.style.alignItems = "baseline";
-    item.style.gap = "8px";
-    item.style.minWidth = "180px";
-
-    const label = document.createElement("span");
-    label.style.fontSize = "12px";
-    label.style.color = "#58708f";
-    label.textContent = normalizeText(field?.label) || "項目";
-
-    const value = document.createElement("strong");
-    value.style.fontSize = "14px";
-    value.style.color = "#0b1b36";
-    value.textContent = formatParentInformationValue(
-      field?.value
-    );
-
-    item.appendChild(label);
-    item.appendChild(value);
-    panel.appendChild(item);
-  });
-
-  panel.classList.remove("hidden");
-  panel.style.display = "flex";
-}
-
-
 function clearDetail() {
   selectedItemId = "";
   detailTitle.textContent = "ファイルを選択してください。";
@@ -297,7 +199,6 @@ function clearDetail() {
   btnDownload.disabled = true;
   sourceUrlLink.classList.add("hidden");
   sourceUrlLink.removeAttribute("href");
-  clearParentInformation();
 }
 
 
@@ -438,9 +339,83 @@ function renderFlatList() {
 }
 
 
+function getParentTableHeaderRow() {
+  const table = parentTableBody?.closest("table");
+  return table?.querySelector("thead tr") || null;
+}
+
+
+function renderParentTableHeader() {
+  const headerRow = getParentTableHeaderRow();
+
+  if (!headerRow) {
+    return;
+  }
+
+  const dynamicHeaders = parentDisplayFields
+    .map(field => `
+      <th>${escapeHtml(normalizeText(field?.label) || "項目")}</th>
+    `)
+    .join("");
+
+  headerRow.innerHTML = `
+    <th class="col-index">No.</th>
+    <th>ファイル名</th>
+    ${dynamicHeaders}
+    <th class="col-count">子件数</th>
+    <th class="col-size">サイズ</th>
+    <th class="col-action">操作</th>
+  `;
+}
+
+
+function getParentDisplayValueMap(item) {
+  const values = Array.isArray(item?.parent_display_values)
+    ? item.parent_display_values
+    : [];
+
+  return new Map(
+    values.map(field => [
+      normalizeText(field?.field_id) || normalizeText(field?.path),
+      field?.value
+    ])
+  );
+}
+
+
+function createParentDisplayCells(item) {
+  const valueMap = getParentDisplayValueMap(item);
+
+  return parentDisplayFields
+    .map(field => {
+      const key =
+        normalizeText(field?.field_id) ||
+        normalizeText(field?.path);
+
+      const value = valueMap.get(key);
+      const displayValue =
+        value === null ||
+        value === undefined ||
+        value === ""
+          ? "-"
+          : typeof value === "object"
+            ? JSON.stringify(value)
+            : String(value);
+
+      return `
+        <td title="${escapeHtml(displayValue)}">
+          ${escapeHtml(displayValue)}
+        </td>
+      `;
+    })
+    .join("");
+}
+
+
 function renderRelationList() {
   flatListSection.classList.add("hidden");
   relationListSection.classList.remove("hidden");
+  renderParentTableHeader();
 
   const parents = getVisibleItems().filter(
     item => normalizeText(item.item_type) === "parent"
@@ -449,7 +424,11 @@ function renderRelationList() {
   parentTableBody.innerHTML = "";
 
   if (parents.length === 0) {
-    renderPlaceholder(parentTableBody, "親ファイルはありません。", 5);
+    renderPlaceholder(
+      parentTableBody,
+      "親ファイルはありません。",
+      5 + parentDisplayFields.length
+    );
     renderPlaceholder(childTableBody, "親ファイルを選択してください。", 5);
     clearDetail();
     return;
@@ -464,6 +443,7 @@ function renderRelationList() {
     row.innerHTML = `
       <td class="col-index">${index + 1}</td>
       <td title="${escapeHtml(getFileName(item))}">${escapeHtml(getFileName(item))}</td>
+      ${createParentDisplayCells(item)}
       <td class="col-count">${descendants.length}</td>
       <td class="col-size">${escapeHtml(formatBytes(item.size_bytes))}</td>
       <td class="col-action">${createDownloadButton(itemId)}</td>
@@ -557,8 +537,7 @@ async function loadDetail(itemId) {
       result?.parent_display_values
     );
   } else {
-    clearParentInformation();
-  }
+    }
 
   if (result?.content_json !== null && result?.content_json !== undefined) {
     detailPre.textContent = JSON.stringify(result.content_json, null, 2);
@@ -601,6 +580,11 @@ async function loadItems() {
     );
 
     items = Array.isArray(result?.items) ? result.items : [];
+    parentDisplayFields = Array.isArray(
+      result?.parent_display_fields
+    )
+      ? result.parent_display_fields
+      : [];
     buildRelations();
     renderSummary(result);
     showDataPanel();
@@ -696,6 +680,7 @@ function bindToolbarEvents() {
     sourceMap = event.detail?.sourceMap || {};
     currentDataSource = null;
     items = [];
+    parentDisplayFields = [];
     showEmpty();
   });
 
@@ -708,6 +693,7 @@ function bindToolbarEvents() {
     if (!sourceId) {
       currentDataSource = null;
       items = [];
+      parentDisplayFields = [];
       showEmpty();
       return;
     }
