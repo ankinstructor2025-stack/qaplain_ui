@@ -36,6 +36,11 @@ const dataImportButton =
         "btn-data-import"
     );
 
+const dataViewButton =
+    document.getElementById(
+        "btn-view"
+    );
+
 const logoutButton =
     document.getElementById(
         "btn-logout"
@@ -86,6 +91,15 @@ async function initialize() {
             dataImportButton.addEventListener(
                 "click",
                 handleDataImport
+            );
+
+        }
+
+        if (dataViewButton) {
+
+            dataViewButton.addEventListener(
+                "click",
+                handleDataView
             );
 
         }
@@ -307,6 +321,47 @@ async function handleDataImport() {
 
         dataImportButton.disabled =
             false;
+
+    }
+
+}
+
+
+async function handleDataView() {
+
+    if (!dataViewButton) {
+        return;
+    }
+
+    dataViewButton.disabled = true;
+
+    try {
+
+        await authenticatedJsonOrThrow(
+            `${API_BASE_URL}/session`,
+            {
+                method: "POST"
+            }
+        );
+
+        location.href =
+            "./data_view.html";
+
+    } catch (error) {
+
+        console.error(
+            "データ照会利用確認エラー:",
+            error
+        );
+
+        alert(
+            error.message ||
+            "データ照会画面を利用できません。"
+        );
+
+    } finally {
+
+        dataViewButton.disabled = false;
 
     }
 
