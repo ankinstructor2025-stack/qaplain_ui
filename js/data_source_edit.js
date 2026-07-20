@@ -34,6 +34,12 @@ import {
     createRequestBody
 } from "./data_source_request.js";
 
+import {
+    createParentDisplayFieldUi,
+    handleAddParentDisplayField,
+    renderParentDisplayFields
+} from "./data_source_display_field.js";
+
 const queryParameters =
     new URLSearchParams(location.search);
 
@@ -132,6 +138,7 @@ const dom = {
 
 const state = {
     parameters: [],
+    parentDisplayFields: [],
     availableFileTypes: [],
     legacyDataFormat: ""
 };
@@ -143,6 +150,7 @@ document.addEventListener(
 
 async function initialize() {
     try {
+        createParentDisplayFieldUi(dom);
         validateRequiredElements();
 
         await waitForLogin();
@@ -171,6 +179,7 @@ async function initialize() {
 
         resetScreen(dom, state);
         renderParameters(dom, state);
+        renderParentDisplayFields(dom, state);
 
         if (isEditMode) {
             dom.pageTitle.textContent =
@@ -237,6 +246,12 @@ function registerEvents() {
         "click",
         () =>
             handleAddParameter(dom, state)
+    );
+
+    dom.addParentDisplayFieldButton.addEventListener(
+        "click",
+        () =>
+            handleAddParentDisplayField(dom, state)
     );
 
     dom.saveButton.addEventListener(
@@ -404,6 +419,11 @@ async function loadDataSource() {
     );
 
     renderParameters(
+        dom,
+        state
+    );
+
+    renderParentDisplayFields(
         dom,
         state
     );

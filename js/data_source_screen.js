@@ -19,6 +19,10 @@ export function handleProcessingPatternChanged(dom, clearInactive = true) {
     dom.parentChildGrandchildSettings.classList.add("hidden");
     dom.fileLinkSettings.classList.add("hidden");
 
+    if (dom.parentDisplaySettings) {
+        dom.parentDisplaySettings.classList.add("hidden");
+    }
+
     if (clearInactive) {
         if (pattern !== "json_list") {
             dom.listArrayPathInput.value = "";
@@ -55,6 +59,16 @@ export function handleProcessingPatternChanged(dom, clearInactive = true) {
         dom.parentChildGrandchildSettings.classList.remove("hidden");
     } else if (pattern === "file_links") {
         dom.fileLinkSettings.classList.remove("hidden");
+    }
+
+    if (
+        dom.parentDisplaySettings &&
+        (
+            pattern === "parent_child" ||
+            pattern === "parent_child_grandchild"
+        )
+    ) {
+        dom.parentDisplaySettings.classList.remove("hidden");
     }
 }
 
@@ -198,6 +212,30 @@ export function setDataSourceValues(dom, state, dataSource) {
     dom.scopeInput.value = dataSource.scope || "";
     dom.enabledInput.checked = dataSource.enabled !== false;
 
+    state.parentDisplayFields = Array.isArray(
+        dataSource.parent_display_fields
+    )
+        ? dataSource.parent_display_fields.map(
+            (field, index) => ({
+                field_id:
+                    field.field_id ||
+                    field.id ||
+                    "",
+                label:
+                    field.label ||
+                    field.display_name ||
+                    "",
+                path:
+                    field.path ||
+                    field.field_path ||
+                    "",
+                display_order:
+                    field.display_order ||
+                    index + 1
+            })
+        )
+        : [];
+
     state.parameters = Array.isArray(dataSource.parameters)
         ? dataSource.parameters.map((parameter, index) => ({
             parameter_id:
@@ -250,6 +288,7 @@ export function resetScreen(dom, state) {
     dom.parameterValueInput.value = "";
 
     state.parameters = [];
+    state.parentDisplayFields = [];
     state.legacyDataFormat = "";
 
     handleProcessingPatternChanged(dom, false);
