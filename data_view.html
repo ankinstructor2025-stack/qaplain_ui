@@ -15,7 +15,7 @@
     <main class="data-view-main">
       <section class="summary-panel" aria-label="取得状況">
         <div class="summary-item">
-          <span class="summary-label">全体</span>
+          <span class="summary-label">ファイル数</span>
           <strong id="totalCount">0 件</strong>
         </div>
         <div class="summary-item">
@@ -23,12 +23,8 @@
           <strong id="parentCount">0 件</strong>
         </div>
         <div class="summary-item">
-          <span class="summary-label">子</span>
+          <span class="summary-label">子・孫</span>
           <strong id="childCount">0 件</strong>
-        </div>
-        <div class="summary-item">
-          <span class="summary-label">ファイル</span>
-          <strong id="fileCount">0 件</strong>
         </div>
         <div class="summary-item summary-size">
           <span class="summary-label">合計サイズ</span>
@@ -48,23 +44,47 @@
             <strong id="dataSourceName">-</strong>
           </div>
           <div>
+            <span class="source-summary-label">処理方式</span>
+            <span id="processingPatternDisplay">-</span>
+          </div>
+          <div>
             <span class="source-summary-label">取得単位</span>
             <span id="batchDisplay">-</span>
           </div>
         </div>
 
-        <div class="lists-grid">
+        <section id="flatListSection" class="list-pane hidden">
+          <h2 id="flatListTitle" class="panel-title">ファイル一覧</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th class="col-index">No.</th>
+                  <th>ファイル名</th>
+                  <th class="col-url">元URL</th>
+                  <th class="col-extension">形式</th>
+                  <th class="col-size">サイズ</th>
+                  <th class="col-date">取得日時</th>
+                  <th class="col-action">操作</th>
+                </tr>
+              </thead>
+              <tbody id="flatTableBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <div id="relationListSection" class="lists-grid hidden">
           <section class="list-pane">
-            <h2 class="panel-title">親・取得データ</h2>
+            <h2 class="panel-title">親ファイル</h2>
             <div class="table-wrap">
-              <table id="parentTable">
+              <table>
                 <thead>
                   <tr>
                     <th class="col-index">No.</th>
-                    <th>名称</th>
-                    <th class="col-type">種別</th>
+                    <th>ファイル名</th>
                     <th class="col-count">子件数</th>
-                    <th class="col-date">取得日時</th>
+                    <th class="col-size">サイズ</th>
+                    <th class="col-action">操作</th>
                   </tr>
                 </thead>
                 <tbody id="parentTableBody"></tbody>
@@ -73,14 +93,14 @@
           </section>
 
           <section class="list-pane">
-            <h2 class="panel-title">子・ファイル</h2>
+            <h2 class="panel-title">子・孫ファイル</h2>
             <div class="table-wrap">
-              <table id="childTable">
+              <table>
                 <thead>
                   <tr>
                     <th class="col-index">No.</th>
-                    <th>名称</th>
-                    <th class="col-extension">形式</th>
+                    <th>ファイル名</th>
+                    <th class="col-type">区分</th>
                     <th class="col-size">サイズ</th>
                     <th class="col-action">操作</th>
                   </tr>
@@ -92,14 +112,17 @@
         </div>
 
         <section class="detail-section">
-          <h2 class="panel-title">詳細表示</h2>
+          <h2 class="panel-title">ファイル内容</h2>
           <div class="detail-header">
-            <span id="detailTitle">データを選択してください。</span>
-            <button id="btnDownload" class="btn btn-primary" type="button" disabled>
-              ダウンロード
-            </button>
+            <span id="detailTitle">ファイルを選択してください。</span>
+            <div class="detail-actions">
+              <a id="sourceUrlLink" class="source-link hidden" target="_blank" rel="noopener noreferrer">元URLを開く</a>
+              <button id="btnDownload" class="btn btn-primary" type="button" disabled>
+                ダウンロード
+              </button>
+            </div>
           </div>
-          <pre id="detailPre">データを選択してください。</pre>
+          <pre id="detailPre">ファイルを選択してください。</pre>
         </section>
       </section>
     </main>
