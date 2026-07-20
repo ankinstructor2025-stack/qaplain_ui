@@ -260,3 +260,67 @@ tbody tr.selected-row {
     flex-direction: column;
   }
 }
+
+/* ==========================================
+   文字色補正（theme.css の body { color:#fff } 対策）
+   ========================================== */
+
+.summary-item,
+.summary-item strong,
+.source-summary,
+.source-summary strong {
+    color: #0f172a;
+}
+
+.panel-title {
+    color: #ffffff;
+}
+
+.table-wrap {
+    color: #0f172a;
+}
+
+.table-wrap table {
+    color: #0f172a;
+}
+
+.table-wrap thead th {
+    color: #334155;
+    background: #f3f6f9;
+    font-weight: 700;
+}
+
+.table-wrap tbody td {
+    color: #0f172a;
+    background: #ffffff;
+}
+
+.table-wrap tbody tr:hover td {
+    background: #eef5ff;
+}
+
+.table-wrap tbody tr.selected-row td {
+    background: #dbeafe;
+    color: #0f172a;
+}
+
+.table-wrap a {
+    color: #2563eb;
+}
+
+.placeholder-row td {
+    color: #607086;
+}
+
+#detailTitle {
+    color: #ffffff;
+}
+
+#detailPre {
+    color: #0f172a;
+    background: #ffffff;
+}
+
+#detailPre * {
+    color: inherit;
+}
