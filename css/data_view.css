@@ -16,7 +16,7 @@
 
 .summary-panel {
   display: grid;
-  grid-template-columns: repeat(5, minmax(110px, 1fr)) auto;
+  grid-template-columns: repeat(4, minmax(120px, 1fr)) auto;
   gap: 8px;
   align-items: stretch;
 }
@@ -104,7 +104,7 @@
 .table-wrap {
   flex: 1;
   min-height: 0;
-  max-height: 390px;
+  max-height: 430px;
   overflow: auto;
   border: 1px solid #d6dee8;
   border-radius: 10px;
@@ -159,7 +159,7 @@ tbody tr.selected-row {
 
 .col-type,
 .col-extension {
-  width: 90px;
+  width: 84px;
 }
 
 .col-count,
@@ -172,22 +172,28 @@ tbody tr.selected-row {
   width: 150px;
 }
 
+.col-url {
+  width: 34%;
+}
+
+.col-url a,
+.source-link {
+  color: #2563eb;
+  text-decoration: underline;
+}
+
 .col-action {
-  width: 100px;
+  width: 82px;
   text-align: center;
 }
 
-.cell-secondary {
-  display: block;
-  margin-top: 3px;
-  color: #607086;
-  font-size: 12px;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.row-download {
+  min-width: 48px;
+  padding: 4px 8px;
 }
 
 .detail-section {
-  min-height: 210px;
+  min-height: 230px;
 }
 
 .detail-header {
@@ -196,6 +202,13 @@ tbody tr.selected-row {
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 6px;
+}
+
+.detail-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 0 0 auto;
 }
 
 #detailTitle {
@@ -208,8 +221,8 @@ tbody tr.selected-row {
 
 #detailPre {
   flex: 1;
-  min-height: 170px;
-  max-height: 320px;
+  min-height: 190px;
+  max-height: 420px;
   margin: 0;
   padding: 12px;
   overflow: auto;
@@ -240,5 +253,10 @@ tbody tr.selected-row {
 
   .summary-panel > .btn {
     grid-column: span 2;
+  }
+
+  .detail-header {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }
