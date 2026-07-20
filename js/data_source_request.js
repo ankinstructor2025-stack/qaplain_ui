@@ -37,6 +37,21 @@ export function createRequestBody(dom, state) {
                     display_order:
                         index + 1
                 })
+            ),
+
+        parent_display_fields:
+            state.parentDisplayFields.map(
+                (field, index) => ({
+                    field_id:
+                        field.field_id ||
+                        undefined,
+                    label:
+                        field.label,
+                    path:
+                        field.path,
+                    display_order:
+                        index + 1
+                })
             )
     };
 
