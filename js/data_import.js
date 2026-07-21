@@ -123,6 +123,21 @@ const importProgressCount =
     "importProgressCount"
   );
 
+const importProgressRunning =
+  document.getElementById(
+    "importProgressRunning"
+  );
+
+const importProgressQueued =
+  document.getElementById(
+    "importProgressQueued"
+  );
+
+const importProgressFailed =
+  document.getElementById(
+    "importProgressFailed"
+  );
+
 const importProgressBar =
   document.getElementById(
     "importProgressBar"
@@ -1311,7 +1326,19 @@ function getTaskProgress(
     parentTotal,
     parentCompleted,
     childTotal,
-    childCompleted
+    childCompleted,
+    running:
+      firstNumber([
+        batch?.running_count
+      ]),
+    queued:
+      firstNumber([
+        batch?.queued_count
+      ]),
+    failed:
+      firstNumber([
+        batch?.failed_count
+      ])
   };
 }
 
@@ -1371,6 +1398,21 @@ function renderImportProgress(
         progress.completed,
         progress.total
       );
+  }
+
+  if (importProgressRunning) {
+    importProgressRunning.textContent =
+      `${progress.running}件`;
+  }
+
+  if (importProgressQueued) {
+    importProgressQueued.textContent =
+      `${progress.queued}件`;
+  }
+
+  if (importProgressFailed) {
+    importProgressFailed.textContent =
+      `${progress.failed}件`;
   }
 
   if (importProgressBar) {
@@ -1709,6 +1751,9 @@ async function handleQueuedImportResult({
     root_completed: 0,
     detail_total: 0,
     detail_completed: 0,
+    running_count: 0,
+    queued_count: 1,
+    failed_count: 0,
     progress_percent: 0
   });
 
