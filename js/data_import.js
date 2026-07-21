@@ -203,7 +203,7 @@ let currentDataSource =
 let currentImportMethod =
   "";
 
-let activeTaskId =
+let activeBatchId =
   "";
 
 let activeTaskDataSource =
@@ -220,6 +220,9 @@ let nextProgressRefreshAt =
 
 let progressRefreshInFlight =
   false;
+
+let lastBatchStatus =
+  "";
 
 
 const TASK_POLL_INTERVAL_MS =
@@ -1184,6 +1187,9 @@ function formatTaskStatus(
     case "completed":
       return "完了";
 
+    case "not_started":
+      return "未開始";
+
     case "failed":
     case "enqueue_failed":
       return "エラー";
@@ -1218,82 +1224,83 @@ function firstNumber(
 
 
 function getTaskProgress(
-  task
+  batch
 ) {
   const parentTotal =
     firstNumber([
-      task?.parent_total,
-      task?.parent_task_total,
-      task?.level1_total,
-      task?.summary?.parent_total,
-      task?.progress?.parent_total
+      batch?.root_total,
+      batch?.parent_total,
+      batch?.parent_task_total,
+      batch?.level1_total
     ]);
 
   const parentCompleted =
     firstNumber([
-      task?.parent_completed,
-      task?.parent_processed,
-      task?.parent_task_completed,
-      task?.level1_completed,
-      task?.summary?.parent_completed,
-      task?.progress?.parent_completed
+      batch?.root_completed,
+      batch?.parent_completed,
+      batch?.parent_processed,
+      batch?.parent_task_completed,
+      batch?.level1_completed
     ]);
 
   const childTotal =
     firstNumber([
-      task?.child_total,
-      task?.child_task_total,
-      task?.level2_total,
-      task?.summary?.child_total,
-      task?.progress?.child_total
+      batch?.detail_total,
+      batch?.child_total,
+      batch?.child_task_total,
+      batch?.level2_total
     ]);
 
   const childCompleted =
     firstNumber([
-      task?.child_completed,
-      task?.child_processed,
-      task?.child_task_completed,
-      task?.level2_completed,
-      task?.summary?.child_completed,
-      task?.progress?.child_completed
+      batch?.detail_completed,
+      batch?.child_completed,
+      batch?.child_processed,
+      batch?.child_task_completed,
+      batch?.level2_completed
     ]);
 
   const total =
     firstNumber([
-      task?.total_count,
-      task?.total_tasks,
-      task?.task_total,
-      task?.document_count,
-      task?.summary?.total_count,
-      task?.progress?.total_count,
+      batch?.total_count,
+      batch?.total_tasks,
+      batch?.task_total,
       parentTotal + childTotal
     ]);
 
   const completed =
     firstNumber([
-      task?.completed_count,
-      task?.processed_count,
-      task?.completed_tasks,
-      task?.task_completed,
-      task?.summary?.completed_count,
-      task?.progress?.completed_count,
+      batch?.finished_count,
+      batch?.completed_count,
+      batch?.processed_count,
+      batch?.completed_tasks,
       parentCompleted + childCompleted
     ]);
 
   const percent =
-    total > 0
+    Number.isFinite(
+      Number(
+        batch?.progress_percent
+      )
+    )
       ? Math.min(
           100,
           Math.max(
             0,
-            completed / total * 100
+            Number(
+              batch.progress_percent
+            )
           )
         )
       : (
-          normalizeTaskStatus(
-            task?.status
-          ) === "completed"
-            ? 100
+          total > 0
+            ? Math.min(
+                100,
+                Math.max(
+                  0,
+                  completed / total * 100
+                )
+              )
             : 0
         );
 
@@ -1336,18 +1343,18 @@ function hideImportProgress() {
 
 
 function renderImportProgress(
-  task
+  batch
 ) {
-  if (!task) {
+  if (!batch) {
     return;
   }
 
   const progress =
-    getTaskProgress(task);
+    getTaskProgress(batch);
 
   const status =
     normalizeTaskStatus(
-      task.status
+      batch.status
     );
 
   showImportProgress();
@@ -1402,9 +1409,7 @@ function renderImportProgress(
   if (importProgressUpdatedAt) {
     importProgressUpdatedAt.textContent =
       formatDateTime(
-        task.updated_at ||
-        task.completed_at ||
-        task.started_at ||
+        batch.updated_at ||
         new Date().toISOString()
       );
   }
@@ -1453,7 +1458,7 @@ function updateProgressCountdown() {
 
 
 function scheduleNextProgressRefresh() {
-  if (!activeTaskId) {
+  if (!activeBatchId) {
     return;
   }
 
@@ -1513,7 +1518,7 @@ async function refreshActiveTaskProgress({
   scheduleNext = false
 } = {}) {
   if (
-    !activeTaskId ||
+    !activeBatchId ||
     progressRefreshInFlight
   ) {
     return null;
@@ -1528,50 +1533,63 @@ async function refreshActiveTaskProgress({
   }
 
   try {
-    const task =
-      await getImportTask(
-        activeTaskId
+    const batch =
+      await getImportBatchProgress(
+        activeBatchId
       );
 
     renderImportProgress(
-      task
+      batch
     );
 
     const status =
       normalizeTaskStatus(
-        task.status
+        batch.status
       );
+
+    if (status !== lastBatchStatus) {
+      writeLog(
+        `取込状態: ${
+          formatTaskStatus(status)
+        }`
+      );
+
+      lastBatchStatus =
+        status;
+    }
 
     if (
       status === "completed" &&
       activeTaskDataSource?.data_source_id
     ) {
+      writeLog(
+        "データ取得が完了しました。"
+      );
+
       await loadImportedItems(
         activeTaskDataSource.data_source_id
       );
     }
 
-    if (
-      status === "failed" ||
-      status === "enqueue_failed"
-    ) {
+    if (status === "failed") {
       writeLog(
-        `タスク状態: ${
-          formatTaskStatus(status)
-        }`
+        `データ取得でエラーが発生しました。失敗件数: ${
+          firstNumber([
+            batch.failed_count
+          ])
+        }件`
       );
     }
 
     if (
       scheduleNext &&
       status !== "completed" &&
-      status !== "failed" &&
-      status !== "enqueue_failed"
+      status !== "failed"
     ) {
       scheduleNextProgressRefresh();
     }
 
-    return task;
+    return batch;
 
   } catch (error) {
     console.error(
@@ -1603,13 +1621,21 @@ async function refreshActiveTaskProgress({
 }
 
 
-async function getImportTask(
-  taskId
+async function getImportBatchProgress(
+  batchId
 ) {
+  const url =
+    new URL(
+      `${API_BASE}/data-import/tasks`
+    );
+
+  url.searchParams.set(
+    "batch_id",
+    batchId
+  );
+
   return await authenticatedJsonOrThrow(
-    `${API_BASE}/data-import/tasks/${
-      encodeURIComponent(taskId)
-    }`,
+    url.toString(),
     {
       method: "GET",
       cache: "no-store"
@@ -1618,102 +1644,28 @@ async function getImportTask(
 }
 
 
-async function waitForImportTask({
-  taskId,
-  dataSource
-}) {
-  if (!taskId) {
-    throw new Error(
-      "取込タスクIDを取得できませんでした。"
-    );
-  }
-
-  const startedAt =
-    Date.now();
-
-  let lastStatus =
-    "";
-
-  while (true) {
-    const task =
-      await getImportTask(
-        taskId
-      );
-
-    const status =
-      normalizeTaskStatus(
-        task.status
-      );
-
-    renderImportProgress(
-      task
-    );
-
-    if (status !== lastStatus) {
-      writeLog(
-        `タスク状態: ${
-          formatTaskStatus(status)
-        }`
-      );
-
-      lastStatus =
-        status;
-    }
-
-    if (status === "completed") {
-      writeLog(
-        "データ取得が完了しました。"
-      );
-
-      await loadImportedItems(
-        dataSource.data_source_id
-      );
-
-      return task;
-    }
-
-    if (
-      status === "failed" ||
-      status === "enqueue_failed"
-    ) {
-      throw new Error(
-        task.error_message ||
-        "データ取得タスクが失敗しました。"
-      );
-    }
-
-    if (
-      Date.now() - startedAt >
-      TASK_POLL_TIMEOUT_MS
-    ) {
-      throw new Error(
-        "データ取得の完了確認がタイムアウトしました。"
-      );
-    }
-
-    await sleep(
-      TASK_POLL_INTERVAL_MS
-    );
-  }
-}
-
-
 async function handleQueuedImportResult({
   result,
   dataSource
 }) {
-  if (!result?.task_id) {
+  if (!result?.batch_id) {
     throw new Error(
-      "データ取得タスクを受け付けられませんでした。"
+      "取込バッチIDを取得できませんでした。"
+    );
+  }
+
+  if (result.task_id) {
+    writeLog(
+      `ルートタスクID: ${result.task_id}`
     );
   }
 
   writeLog(
-    `タスクID: ${result.task_id}`
+    `バッチID: ${result.batch_id}`
   );
 
   writeLog(
-    `タスク状態: ${
+    `取込状態: ${
       formatTaskStatus(
         result.status
       )
@@ -1735,29 +1687,40 @@ async function handleQueuedImportResult({
     );
   }
 
-  activeTaskId =
-    result.task_id;
+  activeBatchId =
+    result.batch_id;
 
   activeTaskDataSource =
     dataSource;
+
+  lastBatchStatus =
+    normalizeTaskStatus(
+      result.status
+    );
 
   renderImportProgress({
     ...result,
     status:
       result.status ||
-      "queued"
+      "queued",
+    total_count: 1,
+    finished_count: 0,
+    root_total: 1,
+    root_completed: 0,
+    detail_total: 0,
+    detail_completed: 0,
+    progress_percent: 0
   });
-
-  scheduleNextProgressRefresh();
 
   showApiImportMessage(
-    "データ取得を受け付けました。完了までお待ちください。"
+    "データ取得を受け付けました。進捗は30秒ごとに更新します。"
   );
 
-  return await waitForImportTask({
-    taskId: result.task_id,
-    dataSource
+  await refreshActiveTaskProgress({
+    scheduleNext: true
   });
+
+  return result;
 }
 
 
@@ -2043,8 +2006,9 @@ function bindToolbarEvents() {
       clearSelectedFile();
       clearApiImportResult();
       stopProgressAutoRefresh();
-      activeTaskId = "";
+      activeBatchId = "";
       activeTaskDataSource = null;
+      lastBatchStatus = "";
       hideImportProgress();
       showEmptyPanel();
 
@@ -2076,8 +2040,9 @@ function bindToolbarEvents() {
         clearSelectedFile();
         clearApiImportResult();
         stopProgressAutoRefresh();
-        activeTaskId = "";
+        activeBatchId = "";
         activeTaskDataSource = null;
+        lastBatchStatus = "";
         hideImportProgress();
         hideAllPanels();
         panelUpload?.classList.remove(
@@ -2104,8 +2069,9 @@ function bindToolbarEvents() {
         clearSelectedFile();
         clearApiImportResult();
         stopProgressAutoRefresh();
-        activeTaskId = "";
+        activeBatchId = "";
         activeTaskDataSource = null;
+        lastBatchStatus = "";
         hideImportProgress();
         showEmptyPanel();
 
@@ -2136,8 +2102,9 @@ function bindToolbarEvents() {
       clearSelectedFile();
       clearApiImportResult();
       stopProgressAutoRefresh();
-      activeTaskId = "";
+      activeBatchId = "";
       activeTaskDataSource = null;
+      lastBatchStatus = "";
       hideImportProgress();
 
       try {
