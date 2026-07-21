@@ -14,6 +14,7 @@
       margin-top: 18px;
       border: 1px solid #d7dee8;
       background: #ffffff;
+      color: #172033;
     }
 
     .import-progress-header {
@@ -27,6 +28,7 @@
     .import-progress-title {
       margin: 0;
       font-size: 16px;
+      color: #172033;
     }
 
     .import-progress-body {
@@ -35,12 +37,35 @@
 
     .import-progress-summary {
       display: grid;
-      grid-template-columns: 110px minmax(160px, 1fr);
-      gap: 8px 12px;
-      align-items: center;
+      grid-template-columns: repeat(5, minmax(120px, 1fr));
+      gap: 10px;
+      align-items: stretch;
+    }
+
+    .import-progress-stat {
+      padding: 10px 12px;
+      border: 1px solid #dfe5ed;
+      border-radius: 4px;
+      background: #f7f9fc;
+    }
+
+    .import-progress-stat-label {
+      display: block;
+      margin-bottom: 4px;
+      color: #5f6f82;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .import-progress-stat-value {
+      display: block;
+      color: #172033;
+      font-size: 20px;
+      font-weight: 700;
     }
 
     .import-progress-label {
+      color: #172033;
       font-weight: 700;
     }
 
@@ -58,6 +83,7 @@
 
     .import-progress-percent {
       min-width: 64px;
+      color: #172033;
       text-align: right;
       font-weight: 700;
     }
@@ -68,6 +94,7 @@
       gap: 8px 12px;
       padding-top: 10px;
       border-top: 1px solid #e1e6ed;
+      color: #172033;
     }
 
     .import-progress-meta {
@@ -77,6 +104,25 @@
       margin-top: 12px;
       color: #5f6f82;
       font-size: 13px;
+    }
+
+    #logBox {
+      max-height: 240px;
+      overflow-y: auto;
+      overflow-x: auto;
+      scrollbar-gutter: stable;
+    }
+
+    #logText {
+      min-height: 100%;
+      margin: 0;
+      white-space: pre;
+    }
+
+    @media (max-width: 1000px) {
+      .import-progress-summary {
+        grid-template-columns: repeat(2, minmax(140px, 1fr));
+      }
     }
   </style>
 </head>
@@ -255,18 +301,64 @@
 
               <div class="import-progress-body">
                 <div class="import-progress-summary">
-                  <div class="import-progress-label">
-                    ステータス
-                  </div>
-                  <div id="importProgressStatus">
-                    -
+                  <div class="import-progress-stat">
+                    <span class="import-progress-stat-label">
+                      ステータス
+                    </span>
+                    <span
+                      id="importProgressStatus"
+                      class="import-progress-stat-value"
+                    >
+                      -
+                    </span>
                   </div>
 
-                  <div class="import-progress-label">
-                    全体
+                  <div class="import-progress-stat">
+                    <span class="import-progress-stat-label">
+                      処理済／全体
+                    </span>
+                    <span
+                      id="importProgressCount"
+                      class="import-progress-stat-value"
+                    >
+                      -
+                    </span>
                   </div>
-                  <div id="importProgressCount">
-                    -
+
+                  <div class="import-progress-stat">
+                    <span class="import-progress-stat-label">
+                      実行中
+                    </span>
+                    <span
+                      id="importProgressRunning"
+                      class="import-progress-stat-value"
+                    >
+                      0件
+                    </span>
+                  </div>
+
+                  <div class="import-progress-stat">
+                    <span class="import-progress-stat-label">
+                      待機中
+                    </span>
+                    <span
+                      id="importProgressQueued"
+                      class="import-progress-stat-value"
+                    >
+                      0件
+                    </span>
+                  </div>
+
+                  <div class="import-progress-stat">
+                    <span class="import-progress-stat-label">
+                      エラー
+                    </span>
+                    <span
+                      id="importProgressFailed"
+                      class="import-progress-stat-value"
+                    >
+                      0件
+                    </span>
                   </div>
                 </div>
 
@@ -289,14 +381,14 @@
 
                 <div class="import-progress-levels">
                   <div class="import-progress-label">
-                    親データ
+                    ルート処理
                   </div>
                   <div id="importProgressParent">
                     -
                   </div>
 
                   <div class="import-progress-label">
-                    子データ
+                    明細処理
                   </div>
                   <div id="importProgressChild">
                     -
