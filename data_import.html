@@ -8,6 +8,77 @@
   <link rel="stylesheet" href="./css/data_import.css">
   <link rel="stylesheet" href="./css/data_import_file.css">
   <link rel="stylesheet" href="./css/data_import_none.css">
+
+  <style>
+    .import-progress {
+      margin-top: 18px;
+      border: 1px solid #d7dee8;
+      background: #ffffff;
+    }
+
+    .import-progress-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      background: #dfe7f1;
+    }
+
+    .import-progress-title {
+      margin: 0;
+      font-size: 16px;
+    }
+
+    .import-progress-body {
+      padding: 14px;
+    }
+
+    .import-progress-summary {
+      display: grid;
+      grid-template-columns: 110px minmax(160px, 1fr);
+      gap: 8px 12px;
+      align-items: center;
+    }
+
+    .import-progress-label {
+      font-weight: 700;
+    }
+
+    .import-progress-bar-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 12px 0;
+    }
+
+    .import-progress-bar {
+      width: 100%;
+      height: 18px;
+    }
+
+    .import-progress-percent {
+      min-width: 64px;
+      text-align: right;
+      font-weight: 700;
+    }
+
+    .import-progress-levels {
+      display: grid;
+      grid-template-columns: 110px minmax(160px, 1fr);
+      gap: 8px 12px;
+      padding-top: 10px;
+      border-top: 1px solid #e1e6ed;
+    }
+
+    .import-progress-meta {
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+      color: #5f6f82;
+      font-size: 13px;
+    }
+  </style>
 </head>
 
 <body>
@@ -162,6 +233,88 @@
                 </button>
               </div>
 
+            </div>
+
+            <div
+              id="importProgress"
+              class="import-progress hidden"
+            >
+              <div class="import-progress-header">
+                <h3 class="import-progress-title">
+                  取得進捗
+                </h3>
+
+                <button
+                  id="btnRefreshProgress"
+                  class="btn"
+                  type="button"
+                >
+                  再読込
+                </button>
+              </div>
+
+              <div class="import-progress-body">
+                <div class="import-progress-summary">
+                  <div class="import-progress-label">
+                    ステータス
+                  </div>
+                  <div id="importProgressStatus">
+                    -
+                  </div>
+
+                  <div class="import-progress-label">
+                    全体
+                  </div>
+                  <div id="importProgressCount">
+                    -
+                  </div>
+                </div>
+
+                <div class="import-progress-bar-row">
+                  <progress
+                    id="importProgressBar"
+                    class="import-progress-bar"
+                    max="100"
+                    value="0"
+                    aria-label="取得進捗"
+                  ></progress>
+
+                  <span
+                    id="importProgressPercent"
+                    class="import-progress-percent"
+                  >
+                    0.0%
+                  </span>
+                </div>
+
+                <div class="import-progress-levels">
+                  <div class="import-progress-label">
+                    親データ
+                  </div>
+                  <div id="importProgressParent">
+                    -
+                  </div>
+
+                  <div class="import-progress-label">
+                    子データ
+                  </div>
+                  <div id="importProgressChild">
+                    -
+                  </div>
+                </div>
+
+                <div class="import-progress-meta">
+                  <div>
+                    最終更新：
+                    <span id="importProgressUpdatedAt">-</span>
+                  </div>
+
+                  <div>
+                    次回更新：
+                    <span id="importProgressNextRefresh">-</span>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div
