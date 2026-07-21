@@ -39,10 +39,21 @@
             データ取込
           </button>
           <div class="menu-text">
-            公開API、公開URL、アップロードファイルからデータを取り込みます。
-            取り込んだデータはナレッジ作成や検索処理の元データとして利用します。
+            公開API、公開URL、アップロードファイルからデータを取得し、
+            Cloud Storageへ保存します。
           </div>
         </div>
+
+        <div class="menu-row">
+          <button class="btn btn-primary menu-btn" id="btn-data-analysis" type="button">
+            データ解析
+          </button>
+          <div class="menu-text">
+            Cloud Storageに保存されたファイルを解析し、
+            ナレッジ作成前の元データとしてFirestoreへ格納します。
+          </div>
+        </div>
+
 
         <div class="menu-row">
           <button class="btn btn-primary menu-btn" id="btn-view" type="button">

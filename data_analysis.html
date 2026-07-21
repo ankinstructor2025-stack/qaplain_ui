@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>データ解析</title>
+<link rel="stylesheet" href="./css/theme.css">
+<style>
+  .analysis-shell {
+    width: min(1400px, calc(100vw - 32px));
+    margin: 16px auto;
+  }
+
+  .analysis-card {
+    padding: 20px;
+  }
+
+  .analysis-guide {
+    margin-bottom: 16px;
+    line-height: 1.8;
+  }
+
+  .analysis-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  .analysis-summary {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(140px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .summary-box {
+    border: 1px solid var(--border-color, #29405f);
+    border-radius: 10px;
+    padding: 12px 14px;
+  }
+
+  .summary-label {
+    font-size: 12px;
+    opacity: 0.75;
+  }
+
+  .summary-value {
+    margin-top: 6px;
+    font-size: 20px;
+    font-weight: 700;
+  }
+
+  .analysis-table-wrap {
+    overflow-x: auto;
+  }
+
+  .analysis-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .analysis-table th,
+  .analysis-table td {
+    padding: 11px 12px;
+    border-bottom: 1px solid var(--border-color, #29405f);
+    text-align: left;
+    vertical-align: middle;
+  }
+
+  .analysis-table th {
+    white-space: nowrap;
+  }
+
+  .analysis-table td:nth-child(1) {
+    min-width: 280px;
+  }
+
+  .analysis-table td:nth-child(2),
+  .analysis-table td:nth-child(3),
+  .analysis-table td:nth-child(4),
+  .analysis-table td:nth-child(5) {
+    white-space: nowrap;
+  }
+
+  .status-text {
+    font-weight: 700;
+  }
+
+  .message-area {
+    min-height: 24px;
+    margin: 12px 0;
+  }
+
+  .empty-row td {
+    padding: 28px 12px;
+    text-align: center;
+    opacity: 0.75;
+  }
+
+  @media (max-width: 900px) {
+    .analysis-summary {
+      grid-template-columns: repeat(2, minmax(140px, 1fr));
+    }
+  }
+</style>
+</head>
+
+<body>
+
+<div id="pageToolbar"></div>
+
+<div class="analysis-shell">
+  <div class="card analysis-card">
+
+    <div class="analysis-guide">
+      Cloud Storageに保存されたファイルを解析し、
+      ナレッジ作成前の元データとしてFirestoreへ格納します。
+      データソースを選択して、対象ファイルの「解析」を押してください。
+    </div>
+
+    <div class="analysis-actions">
+      <button
+          class="btn"
+          id="btnReload"
+          type="button"
+          disabled>
+        再読込
+      </button>
+    </div>
+
+    <div class="analysis-summary">
+      <div class="summary-box">
+        <div class="summary-label">対象ファイル</div>
+        <div class="summary-value" id="fileCount">0 件</div>
+      </div>
+
+      <div class="summary-box">
+        <div class="summary-label">解析済み</div>
+        <div class="summary-value" id="completedCount">0 件</div>
+      </div>
+
+      <div class="summary-box">
+        <div class="summary-label">未解析</div>
+        <div class="summary-value" id="pendingCount">0 件</div>
+      </div>
+
+      <div class="summary-box">
+        <div class="summary-label">エラー</div>
+        <div class="summary-value" id="failedCount">0 件</div>
+      </div>
+    </div>
+
+    <div
+        class="message-area"
+        id="messageArea">
+      データソースを選択してください。
+    </div>
+
+    <div class="analysis-table-wrap">
+      <table class="analysis-table">
+        <thead>
+          <tr>
+            <th>ファイル名</th>
+            <th>拡張子</th>
+            <th>取込方法</th>
+            <th>解析状態</th>
+            <th>登録件数</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="fileTableBody">
+          <tr class="empty-row">
+            <td colspan="6">
+              データソースを選択してください。
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</div>
+
+<script
+    type="module"
+    src="./js/data_analysis.js">
+</script>
+
+</body>
+</html>
