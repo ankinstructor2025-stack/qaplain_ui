@@ -1,108 +1,126 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<title>データ解析</title>
-<link rel="stylesheet" href="./css/theme.css">
-<style>
-  .analysis-shell {
-    width: min(1400px, calc(100vw - 32px));
-    margin: 16px auto;
-  }
+  <meta charset="UTF-8">
+  <title>データ解析</title>
 
-  .analysis-card {
-    padding: 20px;
-  }
+  <link rel="stylesheet" href="./css/theme.css">
 
-  .analysis-guide {
-    margin-bottom: 16px;
-    line-height: 1.8;
-  }
-
-  .analysis-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    margin-bottom: 14px;
-  }
-
-  .analysis-summary {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(140px, 1fr));
-    gap: 12px;
-    margin-bottom: 16px;
-  }
-
-  .summary-box {
-    border: 1px solid var(--border-color, #29405f);
-    border-radius: 10px;
-    padding: 12px 14px;
-  }
-
-  .summary-label {
-    font-size: 12px;
-    opacity: 0.75;
-  }
-
-  .summary-value {
-    margin-top: 6px;
-    font-size: 20px;
-    font-weight: 700;
-  }
-
-  .analysis-table-wrap {
-    overflow-x: auto;
-  }
-
-  .analysis-table {
-    width: 100%;
-    border-collapse: collapse;
-  }
-
-  .analysis-table th,
-  .analysis-table td {
-    padding: 11px 12px;
-    border-bottom: 1px solid var(--border-color, #29405f);
-    text-align: left;
-    vertical-align: middle;
-  }
-
-  .analysis-table th {
-    white-space: nowrap;
-  }
-
-  .analysis-table td:nth-child(1) {
-    min-width: 280px;
-  }
-
-  .analysis-table td:nth-child(2),
-  .analysis-table td:nth-child(3),
-  .analysis-table td:nth-child(4),
-  .analysis-table td:nth-child(5) {
-    white-space: nowrap;
-  }
-
-  .status-text {
-    font-weight: 700;
-  }
-
-  .message-area {
-    min-height: 24px;
-    margin: 12px 0;
-  }
-
-  .empty-row td {
-    padding: 28px 12px;
-    text-align: center;
-    opacity: 0.75;
-  }
-
-  @media (max-width: 900px) {
-    .analysis-summary {
-      grid-template-columns: repeat(2, minmax(140px, 1fr));
+  <style>
+    .analysis-shell {
+      width: min(1400px, calc(100vw - 32px));
+      margin: 16px auto;
     }
-  }
-</style>
+
+    .analysis-card {
+      padding: 20px;
+    }
+
+    .analysis-guide {
+      margin-bottom: 16px;
+      line-height: 1.8;
+    }
+
+    .analysis-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .analysis-progress {
+      margin-top: 18px;
+      border: 1px solid #d7dee8;
+      background: #ffffff;
+      color: #172033;
+    }
+
+    .analysis-progress-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      background: #dfe7f1;
+    }
+
+    .analysis-progress-title {
+      margin: 0;
+      font-size: 16px;
+      color: #172033;
+    }
+
+    .analysis-progress-body {
+      padding: 14px;
+    }
+
+    .analysis-progress-summary {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(120px, 1fr));
+      gap: 10px;
+      align-items: stretch;
+    }
+
+    .analysis-progress-stat {
+      padding: 10px 12px;
+      border: 1px solid #dfe5ed;
+      border-radius: 4px;
+      background: #f7f9fc;
+    }
+
+    .analysis-progress-stat-label {
+      display: block;
+      margin-bottom: 4px;
+      color: #5f6f82;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .analysis-progress-stat-value {
+      display: block;
+      color: #172033;
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .analysis-progress-bar-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 12px 0;
+    }
+
+    .analysis-progress-bar {
+      width: 100%;
+      height: 18px;
+    }
+
+    .analysis-progress-percent {
+      min-width: 64px;
+      color: #172033;
+      text-align: right;
+      font-weight: 700;
+    }
+
+    .analysis-progress-meta {
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+      color: #5f6f82;
+      font-size: 13px;
+    }
+
+    .message-area {
+      min-height: 24px;
+      margin: 12px 0 0;
+    }
+
+    @media (max-width: 1000px) {
+      .analysis-progress-summary {
+        grid-template-columns: repeat(2, minmax(140px, 1fr));
+      }
+    }
+  </style>
 </head>
 
 <body>
@@ -115,76 +133,147 @@
     <div class="analysis-guide">
       Cloud Storageに保存されたファイルを解析し、
       ナレッジ作成前の元データとしてFirestoreへ格納します。
-      データソースを選択して、対象ファイルの「解析」を押してください。
+      データソースを選択して、一括解析を実行してください。
     </div>
 
     <div class="analysis-actions">
       <button
-          class="btn"
-          id="btnReload"
-          type="button"
-          disabled>
-        再読込
+        class="btn btn-primary"
+        id="btnBatchAnalyze"
+        type="button"
+        disabled
+      >
+        未解析ファイルを一括解析
       </button>
     </div>
 
-    <div class="analysis-summary">
-      <div class="summary-box">
-        <div class="summary-label">対象ファイル</div>
-        <div class="summary-value" id="fileCount">0 件</div>
-      </div>
-
-      <div class="summary-box">
-        <div class="summary-label">解析済み</div>
-        <div class="summary-value" id="completedCount">0 件</div>
-      </div>
-
-      <div class="summary-box">
-        <div class="summary-label">未解析</div>
-        <div class="summary-value" id="pendingCount">0 件</div>
-      </div>
-
-      <div class="summary-box">
-        <div class="summary-label">エラー</div>
-        <div class="summary-value" id="failedCount">0 件</div>
-      </div>
-    </div>
-
     <div
-        class="message-area"
-        id="messageArea">
-      データソースを選択してください。
-    </div>
+      id="analysisProgress"
+      class="analysis-progress"
+    >
+      <div class="analysis-progress-header">
+        <h3 class="analysis-progress-title">
+          解析進捗
+        </h3>
 
-    <div class="analysis-table-wrap">
-      <table class="analysis-table">
-        <thead>
-          <tr>
-            <th>ファイル名</th>
-            <th>拡張子</th>
-            <th>取込方法</th>
-            <th>解析状態</th>
-            <th>登録件数</th>
-            <th>操作</th>
-          </tr>
-        </thead>
-        <tbody id="fileTableBody">
-          <tr class="empty-row">
-            <td colspan="6">
-              データソースを選択してください。
-            </td>
-          </tr>
-        </tbody>
-      </table>
+        <button
+          id="btnRefreshProgress"
+          class="btn"
+          type="button"
+          disabled
+        >
+          再読込
+        </button>
+      </div>
+
+      <div class="analysis-progress-body">
+        <div class="analysis-progress-summary">
+          <div class="analysis-progress-stat">
+            <span class="analysis-progress-stat-label">
+              ステータス
+            </span>
+            <span
+              id="analysisProgressStatus"
+              class="analysis-progress-stat-value"
+            >
+              未開始
+            </span>
+          </div>
+
+          <div class="analysis-progress-stat">
+            <span class="analysis-progress-stat-label">
+              処理済／全体
+            </span>
+            <span
+              id="analysisProgressCount"
+              class="analysis-progress-stat-value"
+            >
+              -
+            </span>
+          </div>
+
+          <div class="analysis-progress-stat">
+            <span class="analysis-progress-stat-label">
+              実行中
+            </span>
+            <span
+              id="analysisProgressRunning"
+              class="analysis-progress-stat-value"
+            >
+              0件
+            </span>
+          </div>
+
+          <div class="analysis-progress-stat">
+            <span class="analysis-progress-stat-label">
+              待機中
+            </span>
+            <span
+              id="analysisProgressQueued"
+              class="analysis-progress-stat-value"
+            >
+              0件
+            </span>
+          </div>
+
+          <div class="analysis-progress-stat">
+            <span class="analysis-progress-stat-label">
+              エラー
+            </span>
+            <span
+              id="analysisProgressFailed"
+              class="analysis-progress-stat-value"
+            >
+              0件
+            </span>
+          </div>
+        </div>
+
+        <div class="analysis-progress-bar-row">
+          <progress
+            id="analysisProgressBar"
+            class="analysis-progress-bar"
+            max="100"
+            value="0"
+            aria-label="解析進捗"
+          ></progress>
+
+          <span
+            id="analysisProgressPercent"
+            class="analysis-progress-percent"
+          >
+            0.0%
+          </span>
+        </div>
+
+        <div class="analysis-progress-meta">
+          <div>
+            最終更新：
+            <span id="analysisProgressUpdatedAt">-</span>
+          </div>
+
+          <div>
+            次回更新：
+            <span id="analysisProgressNextRefresh">-</span>
+          </div>
+        </div>
+
+        <div
+          class="message-area"
+          id="messageArea"
+        >
+          データソースを選択してください。
+        </div>
+      </div>
     </div>
 
   </div>
 </div>
 
 <script
-    type="module"
-    src="./js/data_analysis.js">
-</script>
+  type="module"
+  src="./js/data_analysis.js"
+></script>
 
 </body>
 </html>
