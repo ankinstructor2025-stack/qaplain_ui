@@ -36,6 +36,11 @@ const dataImportButton =
         "btn-data-import"
     );
 
+const dataAnalysisButton =
+    document.getElementById(
+        "btn-data-analysis"
+    );
+
 const dataViewButton =
     document.getElementById(
         "btn-view"
@@ -91,6 +96,15 @@ async function initialize() {
             dataImportButton.addEventListener(
                 "click",
                 handleDataImport
+            );
+
+        }
+
+        if (dataAnalysisButton) {
+
+            dataAnalysisButton.addEventListener(
+                "click",
+                handleDataAnalysis
             );
 
         }
@@ -320,6 +334,49 @@ async function handleDataImport() {
     } finally {
 
         dataImportButton.disabled =
+            false;
+
+    }
+
+}
+
+
+async function handleDataAnalysis() {
+
+    if (!dataAnalysisButton) {
+        return;
+    }
+
+    dataAnalysisButton.disabled =
+        true;
+
+    try {
+
+        await authenticatedJsonOrThrow(
+            `${API_BASE_URL}/session`,
+            {
+                method: "POST"
+            }
+        );
+
+        location.href =
+            "./data_analysis.html";
+
+    } catch (error) {
+
+        console.error(
+            "データ解析利用確認エラー:",
+            error
+        );
+
+        alert(
+            error.message ||
+            "データ解析画面を利用できません。"
+        );
+
+    } finally {
+
+        dataAnalysisButton.disabled =
             false;
 
     }
