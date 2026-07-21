@@ -17,11 +17,6 @@ const reloadButton =
         "btnReload"
     );
 
-const fileTableBody =
-    document.getElementById(
-        "fileTableBody"
-    );
-
 const messageArea =
     document.getElementById(
         "messageArea"
@@ -47,9 +42,20 @@ const failedCount =
         "failedCount"
     );
 
+const tableWrap =
+    document.querySelector(
+        ".analysis-table-wrap"
+    );
+
+const actionArea =
+    document.querySelector(
+        ".analysis-actions"
+    );
+
 
 let currentDataSourceId = "";
-let items = [];
+let currentSummary = null;
+let batchButton = null;
 
 
 function normalizeText(value) {
@@ -61,289 +67,219 @@ function normalizeText(value) {
 }
 
 
-function escapeHtml(value) {
+function createBatchButton() {
 
-    return String(
-        value ?? ""
-    )
-        .replaceAll(
-            "&",
-            "&amp;"
-        )
-        .replaceAll(
-            "<",
-            "&lt;"
-        )
-        .replaceAll(
-            ">",
-            "&gt;"
-        )
-        .replaceAll(
-            '"',
-            "&quot;"
-        )
-        .replaceAll(
-            "'",
-            "&#039;"
+    batchButton =
+        document.createElement(
+            "button"
         );
 
-}
+    batchButton.id =
+        "btnBatchAnalyze";
 
+    batchButton.type =
+        "button";
 
-function getItemId(item) {
+    batchButton.className =
+        "btn btn-primary";
 
-    return normalizeText(
-        item.item_id ||
-        item.file_id ||
-        item.id
+    batchButton.textContent =
+        "未解析ファイルを一括解析";
+
+    batchButton.disabled =
+        true;
+
+    batchButton.addEventListener(
+        "click",
+        () => {
+
+            startBatch().catch(
+                handleError
+            );
+
+        }
+    );
+
+    actionArea.insertBefore(
+        batchButton,
+        reloadButton
     );
 
 }
 
 
-function getFileName(item) {
+function hideFileTable() {
 
-    return (
-        normalizeText(
-            item.file_name
-        ) ||
-        normalizeText(
-            item.display_name
-        ) ||
-        normalizeText(
-            item.title
-        ) ||
-        "名称なし"
-    );
-
-}
-
-
-function getExtension(item) {
-
-    return normalizeText(
-        item.extension
-    ).replace(
-        /^\./,
-        ""
-    );
-
-}
-
-
-function getSourceType(item) {
-
-    const importMethod =
-        normalizeText(
-            item.import_method
-        ).toLowerCase();
-
-    if (
-        importMethod === "file_upload" ||
-        importMethod === "upload" ||
-        normalizeText(
-            item.file_id
-        )
-    ) {
-
-        return "uploaded_file";
-
+    if (tableWrap) {
+        tableWrap.style.display =
+            "none";
     }
 
-    return "api_import";
-
 }
 
 
-function getAnalysisStatus(item) {
+function updateSummary(
+    summary
+) {
 
-    const status =
-        normalizeText(
-            item.analysis_status
-        ).toLowerCase();
-
-    if (status === "completed") {
-        return "解析済み";
-    }
-
-    if (status === "failed") {
-        return "エラー";
-    }
-
-    if (status === "running") {
-        return "解析中";
-    }
-
-    return "未解析";
-
-}
-
-
-function getImportMethodLabel(item) {
-
-    const sourceType =
-        getSourceType(item);
-
-    if (sourceType === "uploaded_file") {
-        return "ファイルアップロード";
-    }
-
-    return "外部データ取得";
-
-}
-
-
-function renderEmpty(message) {
-
-    fileTableBody.innerHTML = `
-        <tr class="empty-row">
-          <td colspan="6">
-            ${escapeHtml(message)}
-          </td>
-        </tr>
-    `;
-
-}
-
-
-function updateSummary() {
+    const total =
+        Number(
+            summary?.total_count || 0
+        );
 
     const completed =
-        items.filter(
-            item =>
-                normalizeText(
-                    item.analysis_status
-                ).toLowerCase()
-                === "completed"
-        ).length;
-
-    const failed =
-        items.filter(
-            item =>
-                normalizeText(
-                    item.analysis_status
-                ).toLowerCase()
-                === "failed"
-        ).length;
+        Number(
+            summary?.completed_count || 0
+        );
 
     const pending =
-        items.length -
-        completed -
-        failed;
+        Number(
+            summary?.pending_count || 0
+        );
+
+    const running =
+        Number(
+            summary?.running_count || 0
+        );
+
+    const failed =
+        Number(
+            summary?.failed_count || 0
+        );
 
     fileCount.textContent =
-        `${items.length} 件`;
+        `${total} 件`;
 
     completedCount.textContent =
         `${completed} 件`;
 
     pendingCount.textContent =
-        `${Math.max(pending, 0)} 件`;
+        `${pending + running} 件`;
 
     failedCount.textContent =
         `${failed} 件`;
 
-}
+    if (batchButton) {
 
+        batchButton.disabled =
+            !currentDataSourceId
+            || pending <= 0
+            || running > 0;
 
-function renderItems() {
-
-    updateSummary();
-
-    if (!items.length) {
-
-        renderEmpty(
-            "解析対象のファイルがありません。"
-        );
-
-        return;
+        batchButton.textContent =
+            running > 0
+            ? `解析中 ${running}件`
+            : `未解析${pending}件を一括解析`;
 
     }
 
-    fileTableBody.innerHTML =
-        items.map(
-            item => {
+}
 
-                const itemId =
-                    getItemId(item);
 
-                const sourceType =
-                    getSourceType(item);
+function getLatestBatchMessage(
+    summary
+) {
 
-                const recordCount =
-                    Number(
-                        item.analysis_record_count
-                        || 0
-                    );
+    const batch =
+        summary?.latest_batch;
 
-                const disabled =
-                    !itemId
-                    ? "disabled"
-                    : "";
+    if (!batch) {
+        return "";
+    }
 
-                return `
-                    <tr>
-                      <td>
-                        ${escapeHtml(
-                            getFileName(item)
-                        )}
-                      </td>
-                      <td>
-                        .${escapeHtml(
-                            getExtension(item)
-                        )}
-                      </td>
-                      <td>
-                        ${escapeHtml(
-                            getImportMethodLabel(item)
-                        )}
-                      </td>
-                      <td class="status-text">
-                        ${escapeHtml(
-                            getAnalysisStatus(item)
-                        )}
-                      </td>
-                      <td>
-                        ${recordCount
-                            ? `${recordCount} 件`
-                            : "-"
-                        }
-                      </td>
-                      <td>
-                        <button
-                            class="btn btn-primary"
-                            type="button"
-                            data-action="analyze"
-                            data-source-type="${escapeHtml(
-                                sourceType
-                            )}"
-                            data-source-id="${escapeHtml(
-                                itemId
-                            )}"
-                            ${disabled}>
-                          解析
-                        </button>
-                      </td>
-                    </tr>
-                `;
+    const status =
+        normalizeText(
+            batch.status
+        );
 
-            }
-        ).join("");
+    const total =
+        Number(
+            batch.total_count || 0
+        );
+
+    const completed =
+        Number(
+            batch.completed_count || 0
+        );
+
+    const failed =
+        Number(
+            batch.failed_count || 0
+        );
+
+    const queued =
+        Number(
+            batch.queued_count || 0
+        );
+
+    if (
+        status === "queued"
+        || status === "dispatching"
+    ) {
+
+        return (
+            "一括解析を準備しています。"
+        );
+
+    }
+
+    if (status === "running") {
+
+        return (
+            `一括解析中: `
+            + `${completed + failed}`
+            + ` / ${total}件`
+            + `（TASK登録 ${queued}件）`
+        );
+
+    }
+
+    if (
+        status === "completed"
+        || status ===
+            "completed_with_errors"
+    ) {
+
+        return (
+            `最新ジョブ完了: `
+            + `${completed}件成功、`
+            + `${failed}件エラー`
+        );
+
+    }
+
+    if (status === "failed") {
+
+        return (
+            batch.error_message
+            || "最新の一括解析は失敗しました。"
+        );
+
+    }
+
+    return "";
 
 }
 
 
-async function loadItems() {
+async function loadSummary() {
 
     if (!currentDataSourceId) {
 
-        items = [];
+        currentSummary = null;
 
-        renderEmpty(
-            "データソースを選択してください。"
-        );
-
-        updateSummary();
+        updateSummary({
+            total_count:
+                0,
+            completed_count:
+                0,
+            pending_count:
+                0,
+            running_count:
+                0,
+            failed_count:
+                0
+        });
 
         reloadButton.disabled =
             true;
@@ -358,35 +294,49 @@ async function loadItems() {
     reloadButton.disabled =
         true;
 
+    if (batchButton) {
+        batchButton.disabled =
+            true;
+    }
+
     messageArea.textContent =
-        "対象ファイルを読み込んでいます。";
+        "解析状況を読み込んでいます。";
 
     try {
 
-        const result =
+        currentSummary =
             await authenticatedJsonOrThrow(
                 (
-                    `${API_BASE}/data-view/items`
+                    `${API_BASE}/data-raw/summary`
                     + `?data_source_id=`
                     + encodeURIComponent(
                         currentDataSourceId
                     )
                 ),
                 {
-                    method: "GET"
+                    method:
+                        "GET"
                 }
             );
 
-        items = Array.isArray(
-            result.items
-        )
-            ? result.items
-            : [];
+        updateSummary(
+            currentSummary
+        );
 
-        renderItems();
+        const latestMessage =
+            getLatestBatchMessage(
+                currentSummary
+            );
 
         messageArea.textContent =
-            `${items.length}件のファイルを表示しています。`;
+            latestMessage
+            || (
+                `${Number(
+                    currentSummary.total_count
+                    || 0
+                )}件のファイルが`
+                + "解析対象です。"
+            );
 
     } finally {
 
@@ -398,71 +348,79 @@ async function loadItems() {
 }
 
 
-async function analyzeItem(
-    sourceType,
-    sourceId,
-    button
-) {
+async function startBatch() {
 
-    if (!sourceId) {
+    if (!currentDataSourceId) {
         return;
     }
 
-    button.disabled =
+    const pendingCountValue =
+        Number(
+            currentSummary
+            ?.pending_count
+            || 0
+        );
+
+    if (pendingCountValue <= 0) {
+
+        alert(
+            "未解析ファイルはありません。"
+        );
+
+        return;
+
+    }
+
+    const confirmed =
+        confirm(
+            `${pendingCountValue}件を`
+            + "一括解析します。"
+        );
+
+    if (!confirmed) {
+        return;
+    }
+
+    batchButton.disabled =
+        true;
+
+    reloadButton.disabled =
         true;
 
     messageArea.textContent =
-        "ファイルを解析しています。";
+        "一括解析を受け付けています。";
 
     try {
 
         const result =
             await authenticatedJsonOrThrow(
-                `${API_BASE}/data-raw/process`,
+                `${API_BASE}/data-raw/batch`,
                 {
-                    method: "POST",
-                    body: JSON.stringify({
-                        source_type:
-                            sourceType,
-                        source_id:
-                            sourceId,
-                        overwrite:
-                            true
-                    })
+                    method:
+                        "POST",
+                    body:
+                        JSON.stringify({
+                            data_source_id:
+                                currentDataSourceId
+                        })
                 }
             );
 
-        alert(
-            (
-                "データ解析が完了しました。\n"
-                + `登録件数: `
-                + `${Number(
-                    result.record_count || 0
-                )}件`
-            )
-        );
-
-        await loadItems();
-
-    } catch (error) {
-
-        console.error(
-            "データ解析エラー:",
-            error
-        );
-
-        alert(
-            error.message ||
-            "データ解析に失敗しました。"
-        );
-
         messageArea.textContent =
-            error.message ||
-            "データ解析に失敗しました。";
+            result.message
+            || "一括解析を受け付けました。";
+
+        alert(
+            "一括解析を受け付けました。"
+            + "\n進捗は再読込または"
+            + "ジョブ監視で確認してください。"
+        );
+
+        await loadSummary();
 
     } finally {
 
-        button.disabled =
+        reloadButton.disabled =
             false;
 
     }
@@ -476,30 +434,8 @@ function bindEvents() {
         "click",
         () => {
 
-            loadItems().catch(
+            loadSummary().catch(
                 handleError
-            );
-
-        }
-    );
-
-    fileTableBody.addEventListener(
-        "click",
-        event => {
-
-            const button =
-                event.target.closest(
-                    '[data-action="analyze"]'
-                );
-
-            if (!button) {
-                return;
-            }
-
-            analyzeItem(
-                button.dataset.sourceType,
-                button.dataset.sourceId,
-                button
             );
 
         }
@@ -514,12 +450,12 @@ function bindEvents() {
 
             currentDataSourceId =
                 normalizeText(
-                    detail.dataSourceId ||
-                    detail.sourceId ||
-                    detail.sourceKey
+                    detail.dataSourceId
+                    || detail.sourceId
+                    || detail.sourceKey
                 );
 
-            loadItems().catch(
+            loadSummary().catch(
                 handleError
             );
 
@@ -537,12 +473,12 @@ function handleError(error) {
     );
 
     messageArea.textContent =
-        error.message ||
-        "処理中にエラーが発生しました。";
+        error.message
+        || "処理中にエラーが発生しました。";
 
     alert(
-        error.message ||
-        "処理中にエラーが発生しました。"
+        error.message
+        || "処理中にエラーが発生しました。"
     );
 
 }
@@ -552,6 +488,8 @@ async function initialize() {
 
     await waitForLogin();
 
+    hideFileTable();
+    createBatchButton();
     bindEvents();
 
     if (
@@ -560,7 +498,8 @@ async function initialize() {
     ) {
 
         throw new Error(
-            "common_toolbar.jsを読み込めませんでした。"
+            "common_toolbar.jsを"
+            + "読み込めませんでした。"
         );
 
     }
