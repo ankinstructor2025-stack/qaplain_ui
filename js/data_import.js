@@ -108,6 +108,57 @@ const apiResultPreview =
   );
 
 
+const importProgress =
+  document.getElementById(
+    "importProgress"
+  );
+
+const importProgressStatus =
+  document.getElementById(
+    "importProgressStatus"
+  );
+
+const importProgressCount =
+  document.getElementById(
+    "importProgressCount"
+  );
+
+const importProgressBar =
+  document.getElementById(
+    "importProgressBar"
+  );
+
+const importProgressPercent =
+  document.getElementById(
+    "importProgressPercent"
+  );
+
+const importProgressParent =
+  document.getElementById(
+    "importProgressParent"
+  );
+
+const importProgressChild =
+  document.getElementById(
+    "importProgressChild"
+  );
+
+const importProgressUpdatedAt =
+  document.getElementById(
+    "importProgressUpdatedAt"
+  );
+
+const importProgressNextRefresh =
+  document.getElementById(
+    "importProgressNextRefresh"
+  );
+
+const btnRefreshProgress =
+  document.getElementById(
+    "btnRefreshProgress"
+  );
+
+
 const logText =
   document.getElementById(
     "logText"
@@ -152,9 +203,27 @@ let currentDataSource =
 let currentImportMethod =
   "";
 
+let activeTaskId =
+  "";
+
+let activeTaskDataSource =
+  null;
+
+let progressRefreshTimer =
+  null;
+
+let progressCountdownTimer =
+  null;
+
+let nextProgressRefreshAt =
+  null;
+
+let progressRefreshInFlight =
+  false;
+
 
 const TASK_POLL_INTERVAL_MS =
-  3000;
+  30 * 1000;
 
 const TASK_POLL_TIMEOUT_MS =
   60 * 60 * 1000;
@@ -1125,6 +1194,415 @@ function formatTaskStatus(
 }
 
 
+function firstNumber(
+  values,
+  fallback = 0
+) {
+  for (const value of values) {
+    if (
+      value !== undefined &&
+      value !== null &&
+      value !== ""
+    ) {
+      const number =
+        Number(value);
+
+      if (Number.isFinite(number)) {
+        return number;
+      }
+    }
+  }
+
+  return fallback;
+}
+
+
+function getTaskProgress(
+  task
+) {
+  const parentTotal =
+    firstNumber([
+      task?.parent_total,
+      task?.parent_task_total,
+      task?.level1_total,
+      task?.summary?.parent_total,
+      task?.progress?.parent_total
+    ]);
+
+  const parentCompleted =
+    firstNumber([
+      task?.parent_completed,
+      task?.parent_processed,
+      task?.parent_task_completed,
+      task?.level1_completed,
+      task?.summary?.parent_completed,
+      task?.progress?.parent_completed
+    ]);
+
+  const childTotal =
+    firstNumber([
+      task?.child_total,
+      task?.child_task_total,
+      task?.level2_total,
+      task?.summary?.child_total,
+      task?.progress?.child_total
+    ]);
+
+  const childCompleted =
+    firstNumber([
+      task?.child_completed,
+      task?.child_processed,
+      task?.child_task_completed,
+      task?.level2_completed,
+      task?.summary?.child_completed,
+      task?.progress?.child_completed
+    ]);
+
+  const total =
+    firstNumber([
+      task?.total_count,
+      task?.total_tasks,
+      task?.task_total,
+      task?.document_count,
+      task?.summary?.total_count,
+      task?.progress?.total_count,
+      parentTotal + childTotal
+    ]);
+
+  const completed =
+    firstNumber([
+      task?.completed_count,
+      task?.processed_count,
+      task?.completed_tasks,
+      task?.task_completed,
+      task?.summary?.completed_count,
+      task?.progress?.completed_count,
+      parentCompleted + childCompleted
+    ]);
+
+  const percent =
+    total > 0
+      ? Math.min(
+          100,
+          Math.max(
+            0,
+            completed / total * 100
+          )
+        )
+      : (
+          normalizeTaskStatus(
+            task?.status
+          ) === "completed"
+            ? 100
+            : 0
+        );
+
+  return {
+    total,
+    completed,
+    percent,
+    parentTotal,
+    parentCompleted,
+    childTotal,
+    childCompleted
+  };
+}
+
+
+function formatProgressCount(
+  completed,
+  total
+) {
+  if (total <= 0) {
+    return "-";
+  }
+
+  return `${completed} / ${total}件`;
+}
+
+
+function showImportProgress() {
+  importProgress?.classList.remove(
+    "hidden"
+  );
+}
+
+
+function hideImportProgress() {
+  importProgress?.classList.add(
+    "hidden"
+  );
+}
+
+
+function renderImportProgress(
+  task
+) {
+  if (!task) {
+    return;
+  }
+
+  const progress =
+    getTaskProgress(task);
+
+  const status =
+    normalizeTaskStatus(
+      task.status
+    );
+
+  showImportProgress();
+
+  if (importProgressStatus) {
+    importProgressStatus.textContent =
+      formatTaskStatus(status) ||
+      "確認中";
+  }
+
+  if (importProgressCount) {
+    importProgressCount.textContent =
+      formatProgressCount(
+        progress.completed,
+        progress.total
+      );
+  }
+
+  if (importProgressBar) {
+    importProgressBar.value =
+      progress.percent;
+
+    importProgressBar.setAttribute(
+      "aria-valuenow",
+      String(
+        progress.percent.toFixed(1)
+      )
+    );
+  }
+
+  if (importProgressPercent) {
+    importProgressPercent.textContent =
+      `${progress.percent.toFixed(1)}%`;
+  }
+
+  if (importProgressParent) {
+    importProgressParent.textContent =
+      formatProgressCount(
+        progress.parentCompleted,
+        progress.parentTotal
+      );
+  }
+
+  if (importProgressChild) {
+    importProgressChild.textContent =
+      formatProgressCount(
+        progress.childCompleted,
+        progress.childTotal
+      );
+  }
+
+  if (importProgressUpdatedAt) {
+    importProgressUpdatedAt.textContent =
+      formatDateTime(
+        task.updated_at ||
+        task.completed_at ||
+        task.started_at ||
+        new Date().toISOString()
+      );
+  }
+
+  if (
+    status === "completed" ||
+    status === "failed" ||
+    status === "enqueue_failed"
+  ) {
+    stopProgressAutoRefresh();
+
+    if (importProgressNextRefresh) {
+      importProgressNextRefresh.textContent =
+        "自動更新停止";
+    }
+  }
+}
+
+
+function updateProgressCountdown() {
+  if (!importProgressNextRefresh) {
+    return;
+  }
+
+  if (!nextProgressRefreshAt) {
+    importProgressNextRefresh.textContent =
+      "-";
+
+    return;
+  }
+
+  const remainingSeconds =
+    Math.max(
+      0,
+      Math.ceil(
+        (
+          nextProgressRefreshAt -
+          Date.now()
+        ) / 1000
+      )
+    );
+
+  importProgressNextRefresh.textContent =
+    `${remainingSeconds}秒後`;
+}
+
+
+function scheduleNextProgressRefresh() {
+  if (!activeTaskId) {
+    return;
+  }
+
+  window.clearTimeout(
+    progressRefreshTimer
+  );
+
+  window.clearInterval(
+    progressCountdownTimer
+  );
+
+  nextProgressRefreshAt =
+    Date.now() +
+    TASK_POLL_INTERVAL_MS;
+
+  updateProgressCountdown();
+
+  progressCountdownTimer =
+    window.setInterval(
+      updateProgressCountdown,
+      1000
+    );
+
+  progressRefreshTimer =
+    window.setTimeout(
+      async () => {
+        await refreshActiveTaskProgress({
+          scheduleNext: true
+        });
+      },
+      TASK_POLL_INTERVAL_MS
+    );
+}
+
+
+function stopProgressAutoRefresh() {
+  window.clearTimeout(
+    progressRefreshTimer
+  );
+
+  window.clearInterval(
+    progressCountdownTimer
+  );
+
+  progressRefreshTimer =
+    null;
+
+  progressCountdownTimer =
+    null;
+
+  nextProgressRefreshAt =
+    null;
+}
+
+
+async function refreshActiveTaskProgress({
+  scheduleNext = false
+} = {}) {
+  if (
+    !activeTaskId ||
+    progressRefreshInFlight
+  ) {
+    return null;
+  }
+
+  progressRefreshInFlight =
+    true;
+
+  if (btnRefreshProgress) {
+    btnRefreshProgress.disabled =
+      true;
+  }
+
+  try {
+    const task =
+      await getImportTask(
+        activeTaskId
+      );
+
+    renderImportProgress(
+      task
+    );
+
+    const status =
+      normalizeTaskStatus(
+        task.status
+      );
+
+    if (
+      status === "completed" &&
+      activeTaskDataSource?.data_source_id
+    ) {
+      await loadImportedItems(
+        activeTaskDataSource.data_source_id
+      );
+    }
+
+    if (
+      status === "failed" ||
+      status === "enqueue_failed"
+    ) {
+      writeLog(
+        `タスク状態: ${
+          formatTaskStatus(status)
+        }`
+      );
+    }
+
+    if (
+      scheduleNext &&
+      status !== "completed" &&
+      status !== "failed" &&
+      status !== "enqueue_failed"
+    ) {
+      scheduleNextProgressRefresh();
+    }
+
+    return task;
+
+  } catch (error) {
+    console.error(
+      "進捗取得エラー:",
+      error
+    );
+
+    writeLog(
+      `進捗取得失敗: ${
+        error.message
+      }`
+    );
+
+    if (scheduleNext) {
+      scheduleNextProgressRefresh();
+    }
+
+    return null;
+
+  } finally {
+    progressRefreshInFlight =
+      false;
+
+    if (btnRefreshProgress) {
+      btnRefreshProgress.disabled =
+        false;
+    }
+  }
+}
+
+
 async function getImportTask(
   taskId
 ) {
@@ -1166,6 +1644,10 @@ async function waitForImportTask({
       normalizeTaskStatus(
         task.status
       );
+
+    renderImportProgress(
+      task
+    );
 
     if (status !== lastStatus) {
       writeLog(
@@ -1252,6 +1734,21 @@ async function handleQueuedImportResult({
       `並列数: ${result.task_concurrency}`
     );
   }
+
+  activeTaskId =
+    result.task_id;
+
+  activeTaskDataSource =
+    dataSource;
+
+  renderImportProgress({
+    ...result,
+    status:
+      result.status ||
+      "queued"
+  });
+
+  scheduleNextProgressRefresh();
 
   showApiImportMessage(
     "データ取得を受け付けました。完了までお待ちください。"
@@ -1545,6 +2042,10 @@ function bindToolbarEvents() {
 
       clearSelectedFile();
       clearApiImportResult();
+      stopProgressAutoRefresh();
+      activeTaskId = "";
+      activeTaskDataSource = null;
+      hideImportProgress();
       showEmptyPanel();
 
       if (detail.error) {
@@ -1574,6 +2075,10 @@ function bindToolbarEvents() {
 
         clearSelectedFile();
         clearApiImportResult();
+        stopProgressAutoRefresh();
+        activeTaskId = "";
+        activeTaskDataSource = null;
+        hideImportProgress();
         hideAllPanels();
         panelUpload?.classList.remove(
           "hidden"
@@ -1598,6 +2103,10 @@ function bindToolbarEvents() {
 
         clearSelectedFile();
         clearApiImportResult();
+        stopProgressAutoRefresh();
+        activeTaskId = "";
+        activeTaskDataSource = null;
+        hideImportProgress();
         showEmptyPanel();
 
         return;
@@ -1626,6 +2135,10 @@ function bindToolbarEvents() {
 
       clearSelectedFile();
       clearApiImportResult();
+      stopProgressAutoRefresh();
+      activeTaskId = "";
+      activeTaskDataSource = null;
+      hideImportProgress();
 
       try {
         currentDataSource =
@@ -1762,6 +2275,15 @@ async function initialize() {
   btnClearLog?.addEventListener(
     "click",
     clearLog
+  );
+
+  btnRefreshProgress?.addEventListener(
+    "click",
+    async () => {
+      await refreshActiveTaskProgress({
+        scheduleNext: true
+      });
+    }
   );
 
   if (
