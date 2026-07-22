@@ -9,7 +9,7 @@
         content="width=device-width, initial-scale=1.0">
 
     <title>
-        取得データ照会 - QA+Plain Knowledge Studio
+        解析データ照会 - QA+Plain Knowledge Studio
     </title>
 
     <link rel="stylesheet" href="./css/theme.css">
@@ -40,15 +40,7 @@
             cursor: pointer;
         }
 
-        .data-view-row:hover {
-            background: #f3f6fb;
-        }
-
-        .data-view-row.selected {
-            background: #dbeafe;
-        }
-
-        .data-view-cell {
+.data-view-cell {
             padding: 9px 10px;
             word-break: break-word;
         }
@@ -95,13 +87,34 @@
 
 <main class="page">
 
-    <div class="page-toolbar">
+    <div class="page-toolbar raw-data-view-toolbar">
 
         <div class="page-toolbar-title">
-            取得データ照会
+            解析データ照会
         </div>
 
         <div class="page-toolbar-main">
+
+            <div class="toolbar-field raw-data-view-source-field">
+
+                <label
+                    class="raw-data-view-source-label"
+                    for="dataSourceSelect">
+                    データソース
+                </label>
+
+                <select
+                    id="dataSourceSelect"
+                    class="toolbar-select">
+
+                    <option value="">
+                        データソースを選択してください
+                    </option>
+
+                </select>
+
+            </div>
+
         </div>
 
         <div class="page-toolbar-actions">
@@ -114,41 +127,15 @@
             </button>
 
             <button
-                id="backButton"
+                id="menuButton"
                 type="button"
                 class="btn">
-                戻る
+                メニュー
             </button>
 
         </div>
 
     </div>
-
-    <section class="card">
-
-        <div class="section-block">
-
-            <div class="form-row">
-
-                <label for="dataSourceSelect">
-                    データソース
-                </label>
-
-                <select
-                    id="dataSourceSelect"
-                    class="input">
-
-                    <option value="">
-                        データソースを選択してください
-                    </option>
-
-                </select>
-
-            </div>
-
-        </div>
-
-    </section>
 
     <div class="data-view-grid">
 
