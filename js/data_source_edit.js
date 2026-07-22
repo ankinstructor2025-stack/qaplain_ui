@@ -229,11 +229,14 @@ function registerEvents() {
 
     dom.processingPatternSelect.addEventListener(
         "change",
-        () =>
+        () => {
             handleProcessingPatternChanged(
                 dom,
                 true
-            )
+            );
+
+            handleSourceTypeChanged(dom);
+        }
     );
 
     dom.authenticationMethodSelect.addEventListener(

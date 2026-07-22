@@ -99,9 +99,21 @@ export function handleSourceTypeChanged(dom) {
         methodKey === "file_upload"
     );
 
+    const processingPattern =
+        normalizeProcessingPattern(
+            dom.processingPatternSelect.value
+        );
+
     const showFileExtensions =
         methodKey === "file_upload" ||
-        sourceType === "file";
+        sourceType === "file" ||
+        (
+            processingPattern === "file_links" &&
+            (
+                sourceType === "api" ||
+                sourceType === "url"
+            )
+        );
 
     dom.fileSettings.classList.toggle(
         "hidden",

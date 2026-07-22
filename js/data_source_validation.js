@@ -80,6 +80,9 @@ export function validateInput(dom, isEditMode) {
         if (!dom.fileLinkFieldNameInput.value.trim()) {
             return "ファイルURL項目を入力してください。";
         }
+        if (!getSelectedFileExtensions(dom).length) {
+            return "対象拡張子を1つ以上選択してください。";
+        }
     }
 
     return validateAuthentication(

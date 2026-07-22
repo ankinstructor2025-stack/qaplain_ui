@@ -66,7 +66,11 @@ export function createRequestBody(dom, state) {
     body.data_format =
         state.legacyDataFormat || "json";
 
-    body.file_extensions = [];
+    body.file_extensions =
+        body.processing_pattern === "file_links"
+            ? getSelectedFileExtensions(dom)
+            : [];
+
     body.endpoint_url =
         dom.endpointUrlInput.value.trim();
 
