@@ -47,6 +47,11 @@ const taskConcurrencyInput =
         "taskConcurrency"
     );
 
+const taskMaxAttemptsInput =
+    document.getElementById(
+        "taskMaxAttempts"
+    );
+
 const openaiApiKeyInput =
     document.getElementById(
         "openaiApiKey"
@@ -183,6 +188,9 @@ function initializeNewTenant() {
     taskConcurrencyInput.value =
         "1";
 
+    taskMaxAttemptsInput.value =
+        "5";
+
     resetApiKeyVisibility();
 
 }
@@ -239,6 +247,11 @@ async function loadTenant() {
                 tenant.task_concurrency || 1
             );
 
+        taskMaxAttemptsInput.value =
+            String(
+                tenant.task_max_attempts || 5
+            );
+
         openaiApiKeyInput.value =
             tenant.openai_api_key || "";
 
@@ -280,6 +293,11 @@ async function handleSave() {
         task_concurrency:
             Number(
                 taskConcurrencyInput.value
+            ),
+
+        task_max_attempts:
+            Number(
+                taskMaxAttemptsInput.value
             ),
 
         openai_api_key:
@@ -416,6 +434,20 @@ function validateInput(
 
     }
 
+    if (
+        !Number.isInteger(
+            body.task_max_attempts
+        )
+        || body.task_max_attempts < 1
+        || body.task_max_attempts > 100
+    ) {
+
+        return (
+            "TASKS最大リトライ回数は1～100の整数で入力してください。"
+        );
+
+    }
+
     return "";
 
 }
@@ -486,6 +518,9 @@ function setButtonState(
         disabled;
 
     taskConcurrencyInput.disabled =
+        disabled;
+
+    taskMaxAttemptsInput.disabled =
         disabled;
 
     openaiApiKeyInput.disabled =
