@@ -46,6 +46,11 @@ const dataViewButton =
         "btn-view"
     );
 
+const rawDataViewButton =
+    document.getElementById(
+        "btn-raw-data-view"
+    );
+
 const logoutButton =
     document.getElementById(
         "btn-logout"
@@ -114,6 +119,15 @@ async function initialize() {
             dataViewButton.addEventListener(
                 "click",
                 handleDataView
+            );
+
+        }
+
+        if (rawDataViewButton) {
+
+            rawDataViewButton.addEventListener(
+                "click",
+                handleRawDataView
             );
 
         }
@@ -424,6 +438,34 @@ async function handleDataView() {
 
 }
 
+
+
+async function handleRawDataView() {
+
+    if (!rawDataViewButton) {
+        return;
+    }
+
+    rawDataViewButton.disabled = true;
+
+    try {
+
+        await authenticatedJsonOrThrow(
+            `${API_BASE_URL}/session`,
+            {
+                method: "POST"
+            }
+        );
+
+        location.href = "./raw_data_view.html";
+
+    } finally {
+
+        rawDataViewButton.disabled = false;
+
+    }
+
+}
 
 async function handleLogout() {
 
