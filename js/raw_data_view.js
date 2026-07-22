@@ -899,6 +899,32 @@ function showRecordMessage(
 }
 
 
+function resetView() {
+
+    selectedDataSource =
+        null;
+
+    selectedDocumentId =
+        "";
+
+    selectedRecordId =
+        "";
+
+    parentDisplayFields =
+        [];
+
+    renderDocumentHeader();
+
+    showDocumentMessage(
+        "データソースを選択してください。"
+    );
+
+    clearRecords();
+    clearDetail();
+
+}
+
+
 function bindToolbarEvents() {
 
     document.addEventListener(
@@ -913,26 +939,7 @@ function bindToolbarEvents() {
                 detail.sourceMap ||
                 {};
 
-            selectedDataSource =
-                null;
-
-            selectedDocumentId =
-                "";
-
-            selectedRecordId =
-                "";
-
-            parentDisplayFields =
-                [];
-
-            renderDocumentHeader();
-
-            showDocumentMessage(
-                "データソースを選択してください。"
-            );
-
-            clearRecords();
-            clearDetail();
+            resetView();
 
             if (detail.error) {
 
@@ -948,12 +955,76 @@ function bindToolbarEvents() {
 
     document.addEventListener(
         "toolbar:source-change",
-        async event => {
+        event => {
 
-            await handleDataSourceChanged(
+            handleDataSourceChanged(
                 event.detail ||
                 {}
+            ).catch(
+                error => {
+
+                    console.error(
+                        "データソース変更処理エラー:",
+                        error
+                    );
+
+                    showDocumentMessage(
+                        error.message ||
+                        "解析データを取得できませんでした。"
+                    );
+
+                    clearRecords();
+                    clearDetail();
+
+                }
             );
+
+        }
+    );
+
+}
+
+
+function bindReloadButton() {
+
+    const button =
+        document.getElementById(
+            "btnReload"
+        );
+
+    if (!button) {
+        return;
+    }
+
+    button.addEventListener(
+        "click",
+        async () => {
+
+            button.disabled =
+                true;
+
+            try {
+
+                await handleReload();
+
+            } catch (error) {
+
+                console.error(
+                    "解析データ再読込エラー:",
+                    error
+                );
+
+                alert(
+                    error.message ||
+                    "解析データを再読込できませんでした。"
+                );
+
+            } finally {
+
+                button.disabled =
+                    false;
+
+            }
 
         }
     );
@@ -1017,45 +1088,7 @@ async function initialize() {
         ]
     });
 
-    document
-        .getElementById(
-            "btnReload"
-        )
-        ?.addEventListener(
-            "click",
-            async event => {
-
-                const button =
-                    event.currentTarget;
-
-                button.disabled =
-                    true;
-
-                try {
-
-                    await handleReload();
-
-                } catch (error) {
-
-                    console.error(
-                        "解析データ再読込エラー:",
-                        error
-                    );
-
-                    alert(
-                        error.message ||
-                        "解析データを再読込できませんでした。"
-                    );
-
-                } finally {
-
-                    button.disabled =
-                        false;
-
-                }
-
-            }
-        );
+    bindReloadButton();
 
 }
 
