@@ -22,6 +22,11 @@ const batchButton =
     "btnBatchAnalyze"
   );
 
+const resetButton =
+  document.getElementById(
+    "btnResetAnalysis"
+  );
+
 const refreshButton =
   document.getElementById(
     "btnRefreshProgress"
@@ -343,6 +348,9 @@ function renderProgress(
       ? `解析中 ${progress.running || progress.queued}件`
       : `未解析${pending}件を一括解析`;
 
+  resetButton.disabled =
+    !currentDataSourceId;
+
   refreshButton.disabled =
     !currentDataSourceId;
 
@@ -391,6 +399,9 @@ function resetProgress() {
 
   batchButton.textContent =
     "未解析ファイルを一括解析";
+
+  resetButton.disabled =
+    true;
 
   refreshButton.disabled =
     true;
@@ -637,11 +648,83 @@ async function startBatch() {
 }
 
 
+async function resetAnalysis() {
+  if (!currentDataSourceId) {
+    return;
+  }
+
+  const confirmed =
+    confirm(
+      "解析進捗をリセットします。\n" +
+      "解析済み状態と一括解析履歴が削除され、" +
+      "対象ファイルは未解析に戻ります。"
+    );
+
+  if (!confirmed) {
+    return;
+  }
+
+  stopProgressAutoRefresh();
+
+  batchButton.disabled =
+    true;
+
+  resetButton.disabled =
+    true;
+
+  refreshButton.disabled =
+    true;
+
+  messageArea.textContent =
+    "解析進捗をリセットしています。";
+
+  try {
+    const result =
+      await authenticatedJsonOrThrow(
+        `${API_BASE}/data-raw/batch/reset`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            data_source_id:
+              currentDataSourceId
+          })
+        }
+      );
+
+    currentSummary = null;
+
+    resetProgress();
+
+    messageArea.textContent =
+      result.message ||
+      "解析進捗をリセットしました。";
+
+    await loadSummary();
+
+  } finally {
+    resetButton.disabled =
+      !currentDataSourceId;
+
+    refreshButton.disabled =
+      !currentDataSourceId;
+  }
+}
+
+
 function bindEvents() {
   batchButton.addEventListener(
     "click",
     () => {
       startBatch().catch(
+        handleError
+      );
+    }
+  );
+
+  resetButton.addEventListener(
+    "click",
+    () => {
+      resetAnalysis().catch(
         handleError
       );
     }
