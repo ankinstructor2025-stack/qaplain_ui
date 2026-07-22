@@ -234,13 +234,18 @@ function getProgressValues(
 
   const running =
     firstNumber([
-      batch.running_count,
-      summary?.running_count
+      summary?.running_count,
+      batch.running_count
     ]);
 
   const queued =
     firstNumber([
-      batch.queued_count,
+      summary?.queued_count,
+      batch.queued_count
+    ]);
+
+  const pending =
+    firstNumber([
       summary?.pending_count
     ]);
 
@@ -270,6 +275,7 @@ function getProgressValues(
     failed,
     running,
     queued,
+    pending,
     finished,
     percent
   };
@@ -334,9 +340,7 @@ function renderProgress(
     );
 
   const pending =
-    firstNumber([
-      summary?.pending_count
-    ]);
+    progress.pending;
 
   batchButton.disabled =
     !currentDataSourceId ||
