@@ -7,21 +7,8 @@ import {
     authenticatedJsonOrThrow
 } from "./common.js";
 
+import "./common_toolbar.js";
 
-const dataSourceSelect =
-    document.getElementById(
-        "dataSourceSelect"
-    );
-
-const reloadButton =
-    document.getElementById(
-        "reloadButton"
-    );
-
-const menuButton =
-    document.getElementById(
-        "menuButton"
-    );
 
 const documentHeader =
     document.getElementById(
@@ -54,157 +41,40 @@ const recordDetail =
     );
 
 
-let dataSources = [];
+let sourceMap = {};
 let selectedDataSource = null;
 let selectedDocumentId = "";
 let selectedRecordId = "";
 let parentDisplayFields = [];
 
 
-document.addEventListener(
-    "DOMContentLoaded",
-    initialize
-);
-
-
-async function initialize() {
-
-    try {
-
-        await waitForLogin();
-
-        bindEvents();
-
-        await loadDataSources();
-
-    } catch (error) {
-
-        console.error(
-            "解析データ照会画面初期化エラー:",
-            error
-        );
-
-        alert(
-            error.message ||
-            "画面の初期化に失敗しました。"
-        );
-
-        location.href =
-            "./index.html";
-
-    }
-
-}
-
-
-function bindEvents() {
-
-    dataSourceSelect.addEventListener(
-        "change",
-        handleDataSourceChanged
-    );
-
-    reloadButton.addEventListener(
-        "click",
-        handleReload
-    );
-
-    menuButton.addEventListener(
-        "click",
-        handleMenu
-    );
-
-}
-
-
-
-function handleMenu() {
-
-    location.href =
-        "./menu.html";
-
-}
-
-
-async function loadDataSources() {
-
-    const result =
-        await authenticatedJsonOrThrow(
-            `${API_BASE_URL}/data-sources`,
-            {
-                method: "GET"
-            }
-        );
-
-    const sourceList =
-        Array.isArray(result)
-            ? result
-            : result.data_sources || [];
-
-    dataSources =
-        sourceList.filter(
-            item =>
-                item.enabled !== false
-        );
-
-    dataSourceSelect.innerHTML =
-        "";
-
-    const placeholder =
-        document.createElement(
-            "option"
-        );
-
-    placeholder.value =
-        "";
-
-    placeholder.textContent =
-        "データソースを選択してください";
-
-    dataSourceSelect.appendChild(
-        placeholder
-    );
-
-    dataSources.forEach(
-        dataSource => {
-
-            const option =
-                document.createElement(
-                    "option"
-                );
-
-            option.value =
-                getDataSourceId(
-                    dataSource
-                );
-
-            option.textContent =
-                dataSource.data_source_name ||
-                dataSource.name ||
-                option.value;
-
-            dataSourceSelect.appendChild(
-                option
-            );
-
-        }
-    );
-
-}
-
-
-async function handleDataSourceChanged() {
+async function handleDataSourceChanged(
+    detail
+) {
 
     const dataSourceId =
-        dataSourceSelect.value;
+        String(
+            detail?.dataSourceId ||
+            detail?.sourceId ||
+            detail?.sourceKey ||
+            ""
+        ).trim();
 
     selectedDataSource =
-        dataSources.find(
-            item =>
-                getDataSourceId(
-                    item
-                ) === dataSourceId
-        ) || null;
+        detail?.dataSource ||
+        sourceMap[dataSourceId] ||
+        (
+            dataSourceId
+                ? {
+                    data_source_id:
+                        dataSourceId,
+                    data_source_name:
+                        detail?.dataSourceName ||
+                        detail?.sourceLabel ||
+                        ""
+                }
+                : null
+        );
 
     selectedDocumentId =
         "";
@@ -215,7 +85,7 @@ async function handleDataSourceChanged() {
     clearRecords();
     clearDetail();
 
-    if (!selectedDataSource) {
+    if (!selectedDataSource || !dataSourceId) {
 
         parentDisplayFields =
             [];
@@ -230,11 +100,32 @@ async function handleDataSourceChanged() {
 
     }
 
-    await loadDataSourceDetail(
-        dataSourceId
-    );
+    try {
 
-    await loadDocuments();
+        await loadDataSourceDetail(
+            dataSourceId
+        );
+
+        await loadDocuments();
+
+    } catch (error) {
+
+        console.error(
+            "データソース変更処理エラー:",
+            error
+        );
+
+        parentDisplayFields =
+            [];
+
+        renderDocumentHeader();
+
+        showDocumentMessage(
+            error.message ||
+            "解析データを取得できませんでした。"
+        );
+
+    }
 
 }
 
@@ -776,7 +667,12 @@ async function handleReload() {
 
     if (!selectedDataSource) {
 
-        await loadDataSources();
+        showDocumentMessage(
+            "データソースを選択してください。"
+        );
+
+        clearRecords();
+        clearDetail();
 
         return;
 
@@ -1001,3 +897,188 @@ function showRecordMessage(
     );
 
 }
+
+
+function bindToolbarEvents() {
+
+    document.addEventListener(
+        "toolbar:ready",
+        event => {
+
+            const detail =
+                event.detail ||
+                {};
+
+            sourceMap =
+                detail.sourceMap ||
+                {};
+
+            selectedDataSource =
+                null;
+
+            selectedDocumentId =
+                "";
+
+            selectedRecordId =
+                "";
+
+            parentDisplayFields =
+                [];
+
+            renderDocumentHeader();
+
+            showDocumentMessage(
+                "データソースを選択してください。"
+            );
+
+            clearRecords();
+            clearDetail();
+
+            if (detail.error) {
+
+                console.error(
+                    "データソース取得エラー:",
+                    detail.error
+                );
+
+            }
+
+        }
+    );
+
+    document.addEventListener(
+        "toolbar:source-change",
+        async event => {
+
+            await handleDataSourceChanged(
+                event.detail ||
+                {}
+            );
+
+        }
+    );
+
+}
+
+
+async function initialize() {
+
+    await waitForLogin();
+
+    bindToolbarEvents();
+
+    if (
+        typeof window.renderPageToolbar !==
+        "function"
+    ) {
+        throw new Error(
+            "common_toolbar.jsを読み込めませんでした。"
+        );
+    }
+
+    await window.renderPageToolbar({
+        mountId:
+            "pageToolbar",
+
+        title:
+            "解析データ照会",
+
+        showSourceSelect:
+            true,
+
+        showDbSelect:
+            false,
+
+        enableDbAutoLoad:
+            false,
+
+        actions: [
+            {
+                id:
+                    "btnReload",
+
+                label:
+                    "再読込"
+            },
+            {
+                id:
+                    "btnMenu",
+
+                label:
+                    "メニュー"
+            },
+            {
+                id:
+                    "btnLogout",
+
+                label:
+                    "ログアウト"
+            }
+        ]
+    });
+
+    document
+        .getElementById(
+            "btnReload"
+        )
+        ?.addEventListener(
+            "click",
+            async event => {
+
+                const button =
+                    event.currentTarget;
+
+                button.disabled =
+                    true;
+
+                try {
+
+                    await handleReload();
+
+                } catch (error) {
+
+                    console.error(
+                        "解析データ再読込エラー:",
+                        error
+                    );
+
+                    alert(
+                        error.message ||
+                        "解析データを再読込できませんでした。"
+                    );
+
+                } finally {
+
+                    button.disabled =
+                        false;
+
+                }
+
+            }
+        );
+
+}
+
+
+document.addEventListener(
+    "DOMContentLoaded",
+    () => {
+
+        initialize().catch(
+            error => {
+
+                console.error(
+                    "解析データ照会画面初期化エラー:",
+                    error
+                );
+
+                alert(
+                    error.message ||
+                    "画面の初期化に失敗しました。"
+                );
+
+            }
+        );
+
+    }
+);
