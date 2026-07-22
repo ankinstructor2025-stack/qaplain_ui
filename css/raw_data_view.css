@@ -89,57 +89,24 @@
 }
 
 
-/* ---------- 画面上部ツールバー ---------- */
+/* ---------- raw_data_view layout ---------- */
 
-.raw-data-view .raw-data-view-toolbar{
-    grid-template-columns:auto minmax(300px, 1fr) auto;
-    align-items:center;
-    min-height:54px;
-    margin-bottom:10px;
+.raw-data-view .ds-wrap{
+    margin:8px;
 }
 
-.raw-data-view .raw-data-view-toolbar .page-toolbar-main{
-    display:block;
-    width:min(420px, 100%);
+.raw-data-view #pageToolbar{
+    flex:0 0 auto;
 }
 
-.raw-data-view .raw-data-view-source-field{
-    display:grid;
-    grid-template-columns:auto minmax(220px, 1fr);
-    align-items:center;
-    gap:10px;
+.raw-data-view .data-view-grid{
+    flex:0 0 auto;
 }
 
-.raw-data-view .raw-data-view-source-label{
-    margin:0;
-    color:#ffffff;
-    font-size:13px;
-    font-weight:700;
-    white-space:nowrap;
+.raw-data-view .data-view-panel{
+    padding:24px 26px;
 }
 
-.raw-data-view .raw-data-view-toolbar .toolbar-select{
-    height:36px;
-}
-
-.raw-data-view .raw-data-view-toolbar .page-toolbar-actions .btn{
-    min-width:104px;
-    height:36px;
-    border-radius:12px;
-}
-
-@media (max-width:960px){
-
-    .raw-data-view .raw-data-view-toolbar{
-        grid-template-columns:1fr;
-    }
-
-    .raw-data-view .raw-data-view-toolbar .page-toolbar-main{
-        width:100%;
-    }
-
-    .raw-data-view .raw-data-view-source-field{
-        grid-template-columns:1fr;
-        gap:6px;
-    }
+.raw-data-view .data-view-list{
+    scrollbar-gutter:stable;
 }
