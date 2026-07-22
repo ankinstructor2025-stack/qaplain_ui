@@ -18,9 +18,9 @@ const reloadButton =
         "reloadButton"
     );
 
-const backButton =
+const menuButton =
     document.getElementById(
-        "backButton"
+        "menuButton"
     );
 
 const documentHeader =
@@ -80,7 +80,7 @@ async function initialize() {
     } catch (error) {
 
         console.error(
-            "取得データ照会画面初期化エラー:",
+            "解析データ照会画面初期化エラー:",
             error
         );
 
@@ -109,13 +109,19 @@ function bindEvents() {
         handleReload
     );
 
-    backButton.addEventListener(
+    menuButton.addEventListener(
         "click",
-        () => {
-            location.href =
-                "./menu.html";
-        }
+        handleMenu
     );
+
+}
+
+
+
+function handleMenu() {
+
+    location.href =
+        "./menu.html";
 
 }
 
