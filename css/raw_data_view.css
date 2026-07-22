@@ -1,0 +1,89 @@
+/* ==========================================
+   raw_data_view.css
+   raw_data_view専用スタイル
+========================================== */
+
+.raw-data-view{
+
+    --rdv-bg:#0b1630;
+    --rdv-panel:#102040;
+
+    --rdv-hover:#16345d;
+    --rdv-selected:#2563eb;
+    --rdv-selected-hover:#1d4ed8;
+
+    --rdv-border:#2d4368;
+
+    --rdv-scroll:#3f5f8e;
+    --rdv-scroll-hover:#5b7fb3;
+}
+
+/* ---------- 行 ---------- */
+
+.raw-data-view .data-view-row{
+    transition:background .15s;
+    border-bottom:1px solid var(--rdv-border);
+}
+
+.raw-data-view .data-view-row:hover{
+    background:var(--rdv-hover);
+    cursor:pointer;
+}
+
+.raw-data-view .data-view-row.selected{
+    background:var(--rdv-selected);
+    color:#ffffff;
+    font-weight:600;
+}
+
+.raw-data-view .data-view-row.selected:hover{
+    background:var(--rdv-selected-hover);
+}
+
+.raw-data-view .data-view-cell{
+    color:inherit;
+}
+
+/* ---------- スクロールバー ---------- */
+
+.raw-data-view *::-webkit-scrollbar{
+    width:12px;
+    height:12px;
+}
+
+.raw-data-view *::-webkit-scrollbar-track{
+    background:#0f1c36;
+    border-radius:8px;
+}
+
+.raw-data-view *::-webkit-scrollbar-thumb{
+    background:var(--rdv-scroll);
+    border-radius:8px;
+    border:2px solid #0f1c36;
+}
+
+.raw-data-view *::-webkit-scrollbar-thumb:hover{
+    background:var(--rdv-scroll-hover);
+}
+
+/* Firefox */
+
+.raw-data-view *{
+    scrollbar-width:thin;
+    scrollbar-color:var(--rdv-scroll) #0f1c36;
+}
+
+/* ---------- 詳細 ---------- */
+
+.raw-data-view .data-view-detail{
+    background:#0f1c36;
+    border:1px solid var(--rdv-border);
+    border-radius:10px;
+    padding:16px;
+}
+
+.raw-data-view .data-view-meta{
+    border-bottom:1px solid var(--rdv-border);
+    padding-bottom:12px;
+    margin-bottom:16px;
+}
