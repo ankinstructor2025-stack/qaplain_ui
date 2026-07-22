@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+    <title>
+        取得データ照会 - QA+Plain Knowledge Studio
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="./css/theme.css">
+
+    <style>
+        .data-view-grid {
+            display: grid;
+            grid-template-columns: minmax(420px, 1fr) minmax(420px, 1fr);
+            gap: 14px;
+            align-items: stretch;
+        }
+
+        .data-view-panel {
+            min-width: 0;
+        }
+
+        .data-view-list {
+            max-height: 360px;
+            overflow: auto;
+        }
+
+        .data-view-row {
+            display: flex;
+            align-items: center;
+            min-height: 46px;
+            border-bottom: 1px solid #d8dee9;
+            cursor: pointer;
+        }
+
+        .data-view-row:hover {
+            background: #f3f6fb;
+        }
+
+        .data-view-row.selected {
+            background: #dbeafe;
+        }
+
+        .data-view-cell {
+            padding: 9px 10px;
+            word-break: break-word;
+        }
+
+        .data-view-empty {
+            padding: 28px 16px;
+            text-align: center;
+            color: #64748b;
+        }
+
+        .data-view-detail {
+            min-height: 220px;
+            max-height: 420px;
+            overflow: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+            line-height: 1.7;
+        }
+
+        .data-view-meta {
+            display: grid;
+            grid-template-columns: 140px 1fr;
+            gap: 8px 12px;
+            margin-bottom: 14px;
+        }
+
+        .data-view-meta-label {
+            color: #64748b;
+        }
+
+        .data-view-meta-value {
+            word-break: break-word;
+        }
+
+        @media (max-width: 980px) {
+            .data-view-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<main class="page">
+
+    <div class="page-toolbar">
+
+        <div class="page-toolbar-title">
+            取得データ照会
+        </div>
+
+        <div class="page-toolbar-main">
+        </div>
+
+        <div class="page-toolbar-actions">
+
+            <button
+                id="reloadButton"
+                type="button"
+                class="btn">
+                再読込
+            </button>
+
+            <button
+                id="backButton"
+                type="button"
+                class="btn">
+                戻る
+            </button>
+
+        </div>
+
+    </div>
+
+    <section class="card">
+
+        <div class="section-block">
+
+            <div class="form-row">
+
+                <label for="dataSourceSelect">
+                    データソース
+                </label>
+
+                <select
+                    id="dataSourceSelect"
+                    class="input">
+
+                    <option value="">
+                        データソースを選択してください
+                    </option>
+
+                </select>
+
+            </div>
+
+        </div>
+
+    </section>
+
+    <div class="data-view-grid">
+
+        <section class="card data-view-panel">
+
+            <div class="page-toolbar">
+
+                <div class="page-toolbar-title">
+                    親データ
+                </div>
+
+                <div class="page-toolbar-main">
+                </div>
+
+                <div class="page-toolbar-actions">
+
+                    <span id="documentCount">
+                        0件
+                    </span>
+
+                </div>
+
+            </div>
+
+            <div
+                id="documentHeader"
+                class="list-header">
+            </div>
+
+            <div
+                id="documentList"
+                class="data-view-list">
+
+                <div class="data-view-empty">
+                    データソースを選択してください。
+                </div>
+
+            </div>
+
+        </section>
+
+        <section class="card data-view-panel">
+
+            <div class="page-toolbar">
+
+                <div class="page-toolbar-title">
+                    子レコード
+                </div>
+
+                <div class="page-toolbar-main">
+                </div>
+
+                <div class="page-toolbar-actions">
+
+                    <span id="recordCount">
+                        0件
+                    </span>
+
+                </div>
+
+            </div>
+
+            <div class="list-header">
+
+                <div style="width:12%;">
+                    順番
+                </div>
+
+                <div style="width:42%;">
+                    タイトル
+                </div>
+
+                <div style="width:18%;">
+                    開始
+                </div>
+
+                <div style="width:18%;">
+                    終了
+                </div>
+
+                <div style="width:10%;">
+                    詳細
+                </div>
+
+            </div>
+
+            <div
+                id="recordList"
+                class="data-view-list">
+
+                <div class="data-view-empty">
+                    親データを選択してください。
+                </div>
+
+            </div>
+
+        </section>
+
+    </div>
+
+    <section class="card">
+
+        <div class="page-toolbar">
+
+            <div class="page-toolbar-title">
+                レコード詳細
+            </div>
+
+            <div class="page-toolbar-main">
+            </div>
+
+            <div class="page-toolbar-actions">
+            </div>
+
+        </div>
+
+        <div id="recordDetail">
+
+            <div class="data-view-empty">
+                子レコードを選択してください。
+            </div>
+
+        </div>
+
+    </section>
+
+</main>
+
+<script
+    type="module"
+    src="./js/raw_data_view.js">
+</script>
+
+</body>
+
+</html>
