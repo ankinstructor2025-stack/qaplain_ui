@@ -703,8 +703,17 @@ function showUploadedFileMessage(
 }
 
 
-async function loadUploadedFiles() {
+async function loadUploadedFiles(
+  dataSourceId
+) {
   if (!uploadedFileList) {
+    return;
+  }
+
+  if (!dataSourceId) {
+    showUploadedFileMessage(
+      "データソースを選択してください。"
+    );
     return;
   }
 
@@ -713,25 +722,32 @@ async function loadUploadedFiles() {
   );
 
   try {
+    const url = new URL(
+      `${API_BASE}/data-import/items`
+    );
+
+    url.searchParams.set(
+      "data_source_id",
+      dataSourceId
+    );
+
     const result =
       await authenticatedJsonOrThrow(
-        `${API_BASE}/data-import/uploaded-files`,
+        url.toString(),
         {
-          method:
-            "GET"
+          method: "GET"
         }
       );
 
-    const files =
-      Array.isArray(
-        result?.uploaded_files
-      )
-        ? result.uploaded_files
-        : [];
+    const files = Array.isArray(result?.items)
+      ? result.items.filter(
+          item =>
+            item?.import_type === "file_upload" ||
+            item?.item_type === "file"
+        )
+      : [];
 
-    renderUploadedFiles(
-      files
-    );
+    renderUploadedFiles(files);
 
   } catch (error) {
     console.error(
@@ -1772,12 +1788,19 @@ async function handleQueuedImportResult({
 async function runSelectedDataImport() {
   try {
     if (currentImportMethod === "file_upload") {
+      if (!currentDataSource?.data_source_id) {
+        throw new Error(
+          "データソースを選択してください。"
+        );
+      }
+
       const idToken =
         await getCurrentIdToken();
 
       const result =
         await runFileUploadImport({
-          idToken
+          idToken,
+          dataSource: currentDataSource
         });
 
       if (
@@ -1785,7 +1808,9 @@ async function runSelectedDataImport() {
         "cancelled"
       ) {
         clearSelectedFile();
-        await loadUploadedFiles();
+        await loadUploadedFiles(
+          currentDataSource.data_source_id
+        );
       }
 
       return;
@@ -1818,10 +1843,25 @@ async function runSelectedDataImport() {
       );
 
     switch (methodKey) {
-      case "file_upload":
-        throw new Error(
-          "ファイルアップロードではデータソースを使用しません。"
-        );
+      case "file_upload": {
+        const result =
+          await runFileUploadImport({
+            idToken,
+            dataSource
+          });
+
+        if (
+          result?.status !==
+          "cancelled"
+        ) {
+          clearSelectedFile();
+          await loadUploadedFiles(
+            dataSource.data_source_id
+          );
+        }
+
+        return;
+      }
 
       case "none": {
         const result =
@@ -1894,7 +1934,8 @@ async function runSelectedDataImport() {
 
 
 async function runFileUploadImport({
-  idToken
+  idToken,
+  dataSource
 }) {
   validateModule(
     window.DataImportFileUpload,
@@ -1906,6 +1947,9 @@ async function runFileUploadImport({
       API_BASE,
 
     idToken,
+
+    dataSourceId:
+      dataSource?.data_source_id,
 
     writeLog
   });
@@ -2076,11 +2120,36 @@ function bindToolbarEvents() {
         {};
 
       if (isFileUploadSelection(detail)) {
-        currentImportMethod =
-          "file_upload";
+        const sourceId =
+          detail.dataSourceId ||
+          detail.sourceId ||
+          detail.sourceKey ||
+          detail.dataSource?.data_source_id ||
+          "";
 
-        currentDataSource =
-          null;
+        if (!sourceId) {
+          currentDataSource = null;
+          currentImportMethod = "";
+          showEmptyPanel();
+          return;
+        }
+
+        const source =
+          detail.dataSource ||
+          sourceMap[sourceId] ||
+          {
+            data_source_id: sourceId,
+            data_source_name:
+              detail.dataSourceName ||
+              detail.sourceLabel ||
+              "",
+            source_type:
+              detail.sourceType ||
+              "file",
+            authentication_method_key:
+              detail.authenticationMethodKey ||
+              "file_upload"
+          };
 
         clearSelectedFile();
         clearApiImportResult();
@@ -2089,12 +2158,20 @@ function bindToolbarEvents() {
         activeTaskDataSource = null;
         lastBatchStatus = "";
         hideImportProgress();
-        hideAllPanels();
-        panelUpload?.classList.remove(
-          "hidden"
+
+        currentDataSource =
+          await loadDataSourceDetail(source);
+
+        currentImportMethod =
+          "file_upload";
+
+        showPanelForDataSource(
+          currentDataSource
         );
 
-        await loadUploadedFiles();
+        await loadUploadedFiles(
+          currentDataSource.data_source_id
+        );
         return;
       }
 
@@ -2196,7 +2273,9 @@ function bindToolbarEvents() {
               : "対象拡張子が設定されていません。"
           );
 
-          await loadUploadedFiles();
+          await loadUploadedFiles(
+            currentDataSource.data_source_id
+          );
 
         } else {
           await loadImportedItems(
@@ -2252,9 +2331,7 @@ function bindActionButton(
 
 async function initialize() {
   hideAllPanels();
-  panelUpload?.classList.remove(
-    "hidden"
-  );
+  showEmptyPanel();
 
   bindToolbarEvents();
   bindDataImportResultEvent();

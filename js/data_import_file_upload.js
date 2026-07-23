@@ -4,7 +4,7 @@
  * ファイルアップロード処理
  * POST /data-import/file-upload
  *
- * ファイルアップロードではデータソースを使用しない。
+ * ファイルアップロードでは選択中のデータソースを必須とする。
  */
 
 console.log("data_import_file_upload.js loaded");
@@ -62,11 +62,13 @@ console.log("data_import_file_upload.js loaded");
   async function run({
     apiBase,
     idToken,
+    dataSourceId,
     writeLog
   }) {
     validateArguments({
       apiBase,
-      idToken
+      idToken,
+      dataSourceId
     });
 
     const file = getSelectedFile();
@@ -82,6 +84,7 @@ console.log("data_import_file_upload.js loaded");
     let response = await uploadFile({
       apiBase,
       idToken,
+      dataSourceId,
       file,
       overwrite: false
     });
@@ -107,6 +110,7 @@ console.log("data_import_file_upload.js loaded");
       response = await uploadFile({
         apiBase,
         idToken,
+        dataSourceId,
         file,
         overwrite: true
       });
@@ -131,10 +135,16 @@ console.log("data_import_file_upload.js loaded");
   async function uploadFile({
     apiBase,
     idToken,
+    dataSourceId,
     file,
     overwrite
   }) {
     const formData = new FormData();
+
+    formData.append(
+      "data_source_id",
+      dataSourceId
+    );
 
     formData.append(
       "overwrite",
@@ -160,7 +170,8 @@ console.log("data_import_file_upload.js loaded");
 
   function validateArguments({
     apiBase,
-    idToken
+    idToken,
+    dataSourceId
   }) {
     if (!apiBase) {
       throw new Error(
@@ -171,6 +182,12 @@ console.log("data_import_file_upload.js loaded");
     if (!idToken) {
       throw new Error(
         "idTokenがありません。"
+      );
+    }
+
+    if (!dataSourceId) {
+      throw new Error(
+        "データソースを選択してください。"
       );
     }
   }
