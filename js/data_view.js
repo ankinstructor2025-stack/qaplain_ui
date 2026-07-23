@@ -521,8 +521,27 @@ async function loadDetail(itemId) {
   btnDownload.disabled = true;
   sourceUrlLink.classList.add("hidden");
 
+  const dataSourceId = normalizeText(
+    currentDataSource?.data_source_id
+  );
+
+  if (!dataSourceId) {
+    throw new Error(
+      "データソースを選択してください。"
+    );
+  }
+
+  const url = new URL(
+    `${API_BASE}/data-view/items/${encodeURIComponent(itemId)}`
+  );
+
+  url.searchParams.set(
+    "data_source_id",
+    dataSourceId
+  );
+
   const result = await authenticatedJsonOrThrow(
-    `${API_BASE}/data-view/items/${encodeURIComponent(itemId)}`,
+    url.toString(),
     {
       method: "GET"
     }
@@ -605,8 +624,27 @@ async function downloadItem(itemId) {
   }
 
   const token = await firebaseUser.getIdToken();
+  const dataSourceId = normalizeText(
+    currentDataSource?.data_source_id
+  );
+
+  if (!dataSourceId) {
+    throw new Error(
+      "データソースを選択してください。"
+    );
+  }
+
+  const url = new URL(
+    `${API_BASE}/data-view/items/${encodeURIComponent(normalizedItemId)}/download`
+  );
+
+  url.searchParams.set(
+    "data_source_id",
+    dataSourceId
+  );
+
   const response = await fetch(
-    `${API_BASE}/data-view/items/${encodeURIComponent(normalizedItemId)}/download`,
+    url.toString(),
     {
       method: "GET",
       headers: {
