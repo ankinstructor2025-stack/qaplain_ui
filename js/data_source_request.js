@@ -13,7 +13,7 @@ export function createRequestBody(dom, state) {
         sourceType === "file" || sourceType === "mail";
 
     const methodKey = isFileSource
-        ? "none"
+        ? "file_upload"
         : normalizeAuthenticationMethodKey(
             dom.authenticationMethodSelect.value
         );
@@ -66,7 +66,7 @@ export function createRequestBody(dom, state) {
     if (isFileSource) {
         body.source_type = "file";
         body.processing_pattern = "raw";
-        body.authentication_method_key = "none";
+        body.authentication_method_key = "file_upload";
         body.data_format = "file";
         body.file_extensions =
             getSelectedFileExtensions(dom);
