@@ -18,6 +18,18 @@ export function validateInput(dom, isEditMode) {
         return "データソース種別を選択してください。";
     }
 
+    const sourceType = String(dom.sourceTypeSelect.value || "")
+        .trim()
+        .toLowerCase();
+
+    // ファイルは認証方式・処理方式・追加項目を使用しない。
+    if (sourceType === "file" || sourceType === "mail") {
+        if (!getSelectedFileExtensions(dom).length) {
+            return "対象拡張子を1つ以上選択してください。";
+        }
+        return "";
+    }
+
     if (!dom.processingPatternSelect.value.trim()) {
         return "処理方式を選択してください。";
     }
@@ -28,13 +40,6 @@ export function validateInput(dom, isEditMode) {
 
     if (!methodKey) {
         return "認証方式を選択してください。";
-    }
-
-    if (methodKey === "file_upload") {
-        if (!getSelectedFileExtensions(dom).length) {
-            return "対象拡張子を1つ以上選択してください。";
-        }
-        return "";
     }
 
     if (!dom.endpointUrlInput.value.trim()) {

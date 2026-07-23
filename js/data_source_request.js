@@ -6,9 +6,17 @@ import {
 } from "./data_source_common.js";
 
 export function createRequestBody(dom, state) {
-    const methodKey = normalizeAuthenticationMethodKey(
-        dom.authenticationMethodSelect.value
-    );
+    const sourceType = String(dom.sourceTypeSelect.value || "")
+        .trim()
+        .toLowerCase();
+    const isFileSource =
+        sourceType === "file" || sourceType === "mail";
+
+    const methodKey = isFileSource
+        ? "none"
+        : normalizeAuthenticationMethodKey(
+            dom.authenticationMethodSelect.value
+        );
 
     const body = {
         tenant_id: dom.tenantSelect.value,
@@ -25,7 +33,7 @@ export function createRequestBody(dom, state) {
         enabled:
             dom.enabledInput.checked,
         parameters:
-            state.parameters.map(
+            (isFileSource ? [] : state.parameters).map(
                 (parameter, index) => ({
                     parameter_id:
                         parameter.parameter_id ||
@@ -40,7 +48,7 @@ export function createRequestBody(dom, state) {
             ),
 
         parent_display_fields:
-            state.parentDisplayFields.map(
+            (isFileSource ? [] : state.parentDisplayFields).map(
                 (field, index) => ({
                     field_id:
                         field.field_id ||
@@ -55,11 +63,15 @@ export function createRequestBody(dom, state) {
             )
     };
 
-    if (methodKey === "file_upload") {
+    if (isFileSource) {
+        body.source_type = "file";
         body.processing_pattern = "raw";
+        body.authentication_method_key = "none";
         body.data_format = "file";
         body.file_extensions =
             getSelectedFileExtensions(dom);
+        body.parameters = [];
+        body.parent_display_fields = [];
         return body;
     }
 

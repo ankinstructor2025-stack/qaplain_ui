@@ -3,7 +3,14 @@ export function normalizeFileExtension(value) {
 }
 
 export function normalizeSourceType(value) {
-    return String(value || "").trim().toLowerCase();
+    const normalized = String(value || "")
+        .trim()
+        .toLowerCase();
+
+    // 旧データの「メール」はファイルとして扱う。
+    return normalized === "mail"
+        ? "file"
+        : normalized;
 }
 
 export function normalizeProcessingPattern(value) {

@@ -448,8 +448,6 @@ function getSourceTypeLabel(
     const labels = {
         file:
             "ファイル",
-        mail:
-            "メール",
         url:
             "公開URL",
         api:
@@ -505,6 +503,16 @@ function getProcessingPatternLabel(
 function getAuthenticationMethodLabel(
     dataSource
 ) {
+
+    const sourceType = String(
+        dataSource.source_type || ""
+    )
+        .trim()
+        .toLowerCase();
+
+    if (sourceType === "file" || sourceType === "mail") {
+        return "-";
+    }
 
     if (
         dataSource.authentication_method_name
@@ -565,7 +573,17 @@ function getConnectionTarget(
                 "_"
             );
 
-    if (methodKey === "file_upload") {
+    const sourceType = String(
+        dataSource.source_type || ""
+    )
+        .trim()
+        .toLowerCase();
+
+    if (
+        sourceType === "file" ||
+        sourceType === "mail" ||
+        methodKey === "file_upload"
+    ) {
         return (
             formatExtensions(
                 dataSource.file_extensions

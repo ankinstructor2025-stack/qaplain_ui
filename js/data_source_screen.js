@@ -86,9 +86,27 @@ export function hideAuthenticationFields(dom) {
 
 export function handleSourceTypeChanged(dom) {
     const sourceType = normalizeSourceType(dom.sourceTypeSelect.value);
+    const isFileSource = sourceType === "file";
     const methodKey = normalizeAuthenticationMethodKey(
         dom.authenticationMethodSelect.value
     );
+
+    // ファイルは認証方式・接続先・処理方式・追加項目を使用しない。
+    if (isFileSource) {
+        dom.authenticationMethodSelect.value = "";
+        dom.processingPatternSelect.value = "raw";
+
+        hideAuthenticationFields(dom);
+        dom.connectionSettings.classList.add("hidden");
+        dom.httpMethodRow.classList.add("hidden");
+        dom.fileSettings.classList.remove("hidden");
+
+        setParameterSectionVisible(dom, false);
+        handleProcessingPatternChanged(dom, true);
+        return;
+    }
+
+    setParameterSectionVisible(dom, true);
 
     const isExternal = sourceType === "api" || sourceType === "url";
 
@@ -106,7 +124,6 @@ export function handleSourceTypeChanged(dom) {
 
     const showFileExtensions =
         methodKey === "file_upload" ||
-        sourceType === "file" ||
         (
             processingPattern === "file_links" &&
             (
@@ -121,9 +138,62 @@ export function handleSourceTypeChanged(dom) {
     );
 }
 
+function setParameterSectionVisible(dom, visible) {
+    const section = findParameterSection(dom);
+
+    if (section) {
+        section.classList.toggle("hidden", !visible);
+        return;
+    }
+
+    // HTML側に専用IDがない場合の予備制御。
+    [
+        dom.parameterNameInput,
+        dom.parameterValueInput,
+        dom.parameterList,
+        dom.addParameterButton
+    ]
+        .filter(Boolean)
+        .forEach(element => {
+            element.classList.toggle("hidden", !visible);
+        });
+}
+
+function findParameterSection(dom) {
+    if (dom.parameterSection) {
+        return dom.parameterSection;
+    }
+
+    let element = dom.addParameterButton;
+
+    while (element && element !== document.body) {
+        if (
+            element.contains(dom.parameterNameInput) &&
+            element.contains(dom.parameterValueInput) &&
+            element.contains(dom.parameterList)
+        ) {
+            return element;
+        }
+
+        element = element.parentElement;
+    }
+
+    return null;
+}
+
 export function handleAuthenticationMethodChanged(dom) {
     hideSourceSettings(dom);
     hideAuthenticationFields(dom);
+
+    const sourceType = normalizeSourceType(
+        dom.sourceTypeSelect.value
+    );
+
+    if (sourceType === "file") {
+        dom.fileSettings.classList.remove("hidden");
+        setParameterSectionVisible(dom, false);
+        return;
+    }
 
     const methodKey = normalizeAuthenticationMethodKey(
         dom.authenticationMethodSelect.value
@@ -264,8 +334,8 @@ export function setDataSourceValues(dom, state, dataSource) {
         : [];
 
     handleProcessingPatternChanged(dom, false);
-    handleSourceTypeChanged(dom);
     handleAuthenticationMethodChanged(dom);
+    handleSourceTypeChanged(dom);
 }
 
 export function resetScreen(dom, state) {
@@ -306,4 +376,5 @@ export function resetScreen(dom, state) {
     handleProcessingPatternChanged(dom, false);
     hideSourceSettings(dom);
     hideAuthenticationFields(dom);
+    setParameterSectionVisible(dom, true);
 }

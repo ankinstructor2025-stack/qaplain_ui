@@ -169,6 +169,7 @@ async function initialize() {
             return;
         }
 
+        removeDeprecatedSourceTypeOptions();
         registerEvents();
 
         await Promise.all([
@@ -218,12 +219,23 @@ function validateRequiredElements() {
     }
 }
 
+
+function removeDeprecatedSourceTypeOptions() {
+    Array.from(dom.sourceTypeSelect.options)
+        .filter(option =>
+            String(option.value || "")
+                .trim()
+                .toLowerCase() === "mail"
+        )
+        .forEach(option => option.remove());
+}
+
 function registerEvents() {
     dom.sourceTypeSelect.addEventListener(
         "change",
         () => {
-            handleSourceTypeChanged(dom);
             handleAuthenticationMethodChanged(dom);
+            handleSourceTypeChanged(dom);
         }
     );
 
