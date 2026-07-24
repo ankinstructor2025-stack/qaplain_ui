@@ -210,6 +210,14 @@ const btnFetchDatasets =
   );
 
 
+const deleteDataSourceButtons =
+  Array.from(
+    document.querySelectorAll(
+      '[data-action="delete-data-source-data"]'
+    )
+  );
+
+
 let sourceMap = {};
 
 let currentDataSource =
@@ -703,17 +711,8 @@ function showUploadedFileMessage(
 }
 
 
-async function loadUploadedFiles(
-  dataSourceId
-) {
+async function loadUploadedFiles() {
   if (!uploadedFileList) {
-    return;
-  }
-
-  if (!dataSourceId) {
-    showUploadedFileMessage(
-      "データソースを選択してください。"
-    );
     return;
   }
 
@@ -722,32 +721,25 @@ async function loadUploadedFiles(
   );
 
   try {
-    const url = new URL(
-      `${API_BASE}/data-import/items`
-    );
-
-    url.searchParams.set(
-      "data_source_id",
-      dataSourceId
-    );
-
     const result =
       await authenticatedJsonOrThrow(
-        url.toString(),
+        `${API_BASE}/data-import/uploaded-files`,
         {
-          method: "GET"
+          method:
+            "GET"
         }
       );
 
-    const files = Array.isArray(result?.items)
-      ? result.items.filter(
-          item =>
-            item?.import_type === "file_upload" ||
-            item?.item_type === "file"
-        )
-      : [];
+    const files =
+      Array.isArray(
+        result?.uploaded_files
+      )
+        ? result.uploaded_files
+        : [];
 
-    renderUploadedFiles(files);
+    renderUploadedFiles(
+      files
+    );
 
   } catch (error) {
     console.error(
@@ -1785,22 +1777,156 @@ async function handleQueuedImportResult({
 }
 
 
+function setDeleteButtonsDisabled(
+  disabled
+) {
+  deleteDataSourceButtons.forEach(
+    button => {
+      button.disabled =
+        disabled;
+    }
+  );
+}
+
+
+async function deleteSelectedDataSourceData() {
+  if (!currentDataSource) {
+    alert(
+      "データソースを選択してください。"
+    );
+
+    return;
+  }
+
+  const dataSourceId =
+    String(
+      currentDataSource.data_source_id ||
+      ""
+    ).trim();
+
+  const dataSourceName =
+    String(
+      currentDataSource.data_source_name ||
+      dataSourceId
+    ).trim();
+
+  if (!dataSourceId) {
+    alert(
+      "データソースIDを取得できません。"
+    );
+
+    return;
+  }
+
+  const confirmed =
+    window.confirm(
+      `データソース「${dataSourceName}」配下の取込データをすべて削除します。\n\n` +
+      "削除対象:\n" +
+      "・data_import（子・孫を含む）\n" +
+      "・raw_documents（recordsを含む）\n" +
+      "・Cloud Storage の imports\n" +
+      "・取込タスク／解析バッチ\n\n" +
+      "この操作は取り消せません。"
+    );
+
+  if (!confirmed) {
+    return;
+  }
+
+  stopProgressAutoRefresh();
+  setDeleteButtonsDisabled(
+    true
+  );
+
+  writeLog(
+    `全削除開始: ${dataSourceName}`
+  );
+
+  try {
+    const result =
+      await authenticatedJsonOrThrow(
+        `${API_BASE}/data-import/data-source/${encodeURIComponent(dataSourceId)}`,
+        {
+          method:
+            "DELETE"
+        }
+      );
+
+    activeBatchId =
+      "";
+
+    activeTaskDataSource =
+      null;
+
+    lastBatchStatus =
+      "";
+
+    hideImportProgress();
+    clearApiImportResult();
+    clearSelectedFile();
+
+    if (
+      normalizeAuthenticationMethodKey(
+        currentDataSource.authentication_method_key
+      ) === "file_upload"
+    ) {
+      await loadUploadedFiles();
+
+    } else {
+      await loadImportedItems(
+        dataSourceId
+      );
+    }
+
+    const deleted =
+      result.deleted_counts ||
+      {};
+
+    writeLog(
+      "全削除完了: " +
+      `data_import=${deleted.data_import || 0}件, ` +
+      `raw_documents=${deleted.raw_documents || 0}件, ` +
+      `storage=${deleted.storage_objects || 0}件, ` +
+      `import_tasks=${deleted.import_tasks || 0}件, ` +
+      `analysis_batches=${deleted.analysis_batches || 0}件`
+    );
+
+    alert(
+      "データソース配下の取込・解析データを削除しました。"
+    );
+
+  } catch (error) {
+    console.error(
+      "データソース配下削除エラー:",
+      error
+    );
+
+    writeLog(
+      `全削除失敗: ${error.message || error}`
+    );
+
+    alert(
+      error.message ||
+      "データソース配下の削除に失敗しました。"
+    );
+
+  } finally {
+    setDeleteButtonsDisabled(
+      false
+    );
+  }
+}
+
+
 async function runSelectedDataImport() {
   try {
     if (currentImportMethod === "file_upload") {
-      if (!currentDataSource?.data_source_id) {
-        throw new Error(
-          "データソースを選択してください。"
-        );
-      }
-
       const idToken =
         await getCurrentIdToken();
 
       const result =
         await runFileUploadImport({
-          idToken,
-          dataSource: currentDataSource
+          idToken
         });
 
       if (
@@ -1808,9 +1934,7 @@ async function runSelectedDataImport() {
         "cancelled"
       ) {
         clearSelectedFile();
-        await loadUploadedFiles(
-          currentDataSource.data_source_id
-        );
+        await loadUploadedFiles();
       }
 
       return;
@@ -1843,25 +1967,10 @@ async function runSelectedDataImport() {
       );
 
     switch (methodKey) {
-      case "file_upload": {
-        const result =
-          await runFileUploadImport({
-            idToken,
-            dataSource
-          });
-
-        if (
-          result?.status !==
-          "cancelled"
-        ) {
-          clearSelectedFile();
-          await loadUploadedFiles(
-            dataSource.data_source_id
-          );
-        }
-
-        return;
-      }
+      case "file_upload":
+        throw new Error(
+          "ファイルアップロードではデータソースを使用しません。"
+        );
 
       case "none": {
         const result =
@@ -1934,8 +2043,7 @@ async function runSelectedDataImport() {
 
 
 async function runFileUploadImport({
-  idToken,
-  dataSource
+  idToken
 }) {
   validateModule(
     window.DataImportFileUpload,
@@ -1947,9 +2055,6 @@ async function runFileUploadImport({
       API_BASE,
 
     idToken,
-
-    dataSourceId:
-      dataSource?.data_source_id,
 
     writeLog
   });
@@ -2120,36 +2225,11 @@ function bindToolbarEvents() {
         {};
 
       if (isFileUploadSelection(detail)) {
-        const sourceId =
-          detail.dataSourceId ||
-          detail.sourceId ||
-          detail.sourceKey ||
-          detail.dataSource?.data_source_id ||
-          "";
+        currentImportMethod =
+          "file_upload";
 
-        if (!sourceId) {
-          currentDataSource = null;
-          currentImportMethod = "";
-          showEmptyPanel();
-          return;
-        }
-
-        const source =
-          detail.dataSource ||
-          sourceMap[sourceId] ||
-          {
-            data_source_id: sourceId,
-            data_source_name:
-              detail.dataSourceName ||
-              detail.sourceLabel ||
-              "",
-            source_type:
-              detail.sourceType ||
-              "file",
-            authentication_method_key:
-              detail.authenticationMethodKey ||
-              "file_upload"
-          };
+        currentDataSource =
+          null;
 
         clearSelectedFile();
         clearApiImportResult();
@@ -2158,20 +2238,12 @@ function bindToolbarEvents() {
         activeTaskDataSource = null;
         lastBatchStatus = "";
         hideImportProgress();
-
-        currentDataSource =
-          await loadDataSourceDetail(source);
-
-        currentImportMethod =
-          "file_upload";
-
-        showPanelForDataSource(
-          currentDataSource
+        hideAllPanels();
+        panelUpload?.classList.remove(
+          "hidden"
         );
 
-        await loadUploadedFiles(
-          currentDataSource.data_source_id
-        );
+        await loadUploadedFiles();
         return;
       }
 
@@ -2273,9 +2345,7 @@ function bindToolbarEvents() {
               : "対象拡張子が設定されていません。"
           );
 
-          await loadUploadedFiles(
-            currentDataSource.data_source_id
-          );
+          await loadUploadedFiles();
 
         } else {
           await loadImportedItems(
@@ -2331,7 +2401,9 @@ function bindActionButton(
 
 async function initialize() {
   hideAllPanels();
-  showEmptyPanel();
+  panelUpload?.classList.remove(
+    "hidden"
+  );
 
   bindToolbarEvents();
   bindDataImportResultEvent();
@@ -2372,6 +2444,16 @@ async function initialize() {
       await refreshActiveTaskProgress({
         scheduleNext: true
       });
+    }
+  );
+
+
+  deleteDataSourceButtons.forEach(
+    button => {
+      button.addEventListener(
+        "click",
+        deleteSelectedDataSourceData
+      );
     }
   );
 
