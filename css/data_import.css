@@ -512,3 +512,23 @@
     grid-template-columns:repeat(2,minmax(180px,1fr));
   }
 }
+
+.btn-delete-data-source {
+  background: #dc2626;
+  border: 1px solid #dc2626;
+  color: #ffffff;
+  opacity: 1;
+}
+
+.btn-delete-data-source:hover:not(:disabled) {
+  background: #b91c1c;
+  border-color: #b91c1c;
+}
+
+.btn-delete-data-source:disabled {
+  background: #e5e7eb;
+  border-color: #e5e7eb;
+  color: #9ca3af;
+  opacity: 1;
+  cursor: not-allowed;
+}
