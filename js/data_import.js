@@ -1789,6 +1789,101 @@ function setDeleteButtonsDisabled(
 }
 
 
+function setImportButtonsDisabled(
+  disabled
+) {
+  [
+    btnUploadRegister,
+    btnUrlRegister,
+    btnApiRegister,
+    btnKokkaiRegister,
+    btnFetchDatasets
+  ]
+    .filter(
+      button =>
+        button
+    )
+    .forEach(
+      button => {
+        button.disabled =
+          disabled;
+      }
+    );
+}
+
+
+function setAllActionButtonsDisabled(
+  disabled
+) {
+  setImportButtonsDisabled(
+    disabled
+  );
+
+  setDeleteButtonsDisabled(
+    disabled
+  );
+}
+
+
+function showProcessingOverlay(
+  message
+) {
+  let overlay =
+    document.getElementById(
+      "dataImportProcessingOverlay"
+    );
+
+  if (!overlay) {
+    overlay =
+      document.createElement(
+        "div"
+      );
+
+    overlay.id =
+      "dataImportProcessingOverlay";
+
+    overlay.innerHTML = `
+      <div class="data-import-processing-message">
+        <div class="data-import-processing-spinner"></div>
+        <div id="dataImportProcessingText"></div>
+      </div>
+    `;
+
+    document.body.appendChild(
+      overlay
+    );
+  }
+
+  const messageElement =
+    document.getElementById(
+      "dataImportProcessingText"
+    );
+
+  if (messageElement) {
+    messageElement.textContent =
+      String(
+        message ||
+        "処理中です。完了までお待ちください。"
+      );
+  }
+
+  overlay.classList.add(
+    "is-visible"
+  );
+}
+
+
+function hideProcessingOverlay() {
+  document
+    .getElementById(
+      "dataImportProcessingOverlay"
+    )
+    ?.classList.remove(
+      "is-visible"
+    );
+}
+
+
 async function deleteSelectedDataSourceData() {
   if (!currentDataSource) {
     alert(
@@ -1834,8 +1929,13 @@ async function deleteSelectedDataSourceData() {
   }
 
   stopProgressAutoRefresh();
-  setDeleteButtonsDisabled(
+
+  setAllActionButtonsDisabled(
     true
+  );
+
+  showProcessingOverlay(
+    `「${dataSourceName}」のデータを削除しています。完了までお待ちください。`
   );
 
   writeLog(
@@ -1911,7 +2011,9 @@ async function deleteSelectedDataSourceData() {
     );
 
   } finally {
-    setDeleteButtonsDisabled(
+    hideProcessingOverlay();
+
+    setAllActionButtonsDisabled(
       false
     );
   }
