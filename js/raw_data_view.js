@@ -380,9 +380,30 @@ async function loadRecords(
         "読込中..."
     );
 
+    const dataSourceId =
+        getDataSourceId(
+            selectedDataSource
+        );
+
+    if (!dataSourceId) {
+        throw new Error(
+            "データソースを選択してください。"
+        );
+    }
+
+    const url =
+        new URL(
+            `${API_BASE_URL}/raw-data-view/documents/${encodeURIComponent(documentId)}/records`
+        );
+
+    url.searchParams.set(
+        "data_source_id",
+        dataSourceId
+    );
+
     const result =
         await authenticatedJsonOrThrow(
-            `${API_BASE_URL}/raw-data-view/documents/${encodeURIComponent(documentId)}/records`,
+            url.toString(),
             {
                 method: "GET"
             }
